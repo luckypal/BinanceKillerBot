@@ -57,4 +57,15 @@ export class AppEnvironment {
 
   @Env('PHONE_NUMBER')
   readonly phoneNumber = '';
+
+  @Env('BINANCE_API_KEY')
+  readonly bncApiKey = '';
+
+  @Env('BINANCE_SECRET_KEY')
+  readonly bncSecKey = '';
+
+  @Env('BINANCE_UPDATE_INTERVAL')
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNumber()
+  readonly bncUpdateInterval = 10;
 }

@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TelegramService } from './services/telegram/telegram.service';
 import { AppEnvironment } from './app.environment'
+import { BinanceService } from './services/binance/binance.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { AppEnvironment } from './app.environment'
     }),
   ],
   controllers: [AppController],
-  providers: [AppService, TelegramService],
+  providers: [AppService, TelegramService, BinanceService],
 })
 export class AppModule { }
