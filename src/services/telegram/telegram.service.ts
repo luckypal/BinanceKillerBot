@@ -31,7 +31,22 @@ export class TelegramService {
       },
     });
     this.mtproto.setDefaultDc(this.appEnvironment.tgDcId);
-    this.startAuth(this.appEnvironment.phoneNumber);
+
+
+    this.mtproto
+      .call('users.getFullUser', {
+        id: {
+          _: 'inputUserSelf',
+        },
+      })
+      .then((result) => {
+        console.log('Telegram GetFull User', result)
+        this.startListener();
+      })
+      .catch(error => {
+        console.log('Telegram Error', error)
+        this.startAuth(this.appEnvironment.phoneNumber);
+      })
 
     // const isProcess = true;
     const isProcess = false;
@@ -95,7 +110,6 @@ export class TelegramService {
   }
 
   async startAuth(phone_number) {
-
     console.log('[+] You must log in')
     // if (!phone_number) phone_number = await this.getPhone()
 
