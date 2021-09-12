@@ -8,6 +8,7 @@ import { BinanceService } from './services/binance/binance.service';
 import { OrderService } from './services/order/order.service';
 import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
+import { BalanceService } from './services/balance/balance.service';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { StorageService } from './services/storage/storage.service';
     BinanceService,
     OrderService,
     LogService,
-    StorageService
+    StorageService,
+    BalanceService
   ],
 })
 export class AppModule { }

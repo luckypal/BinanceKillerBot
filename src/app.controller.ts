@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AppService } from './app.service';
+import { BalanceService } from './services/balance/balance.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
 import { OrderService } from './services/order/order.service';
@@ -13,6 +14,7 @@ export class AppController {
     private readonly orderService: OrderService,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
+    private readonly balanceService: BalanceService,
     private readonly logService: LogService,
     private readonly storageService: StorageService
   ) {
@@ -33,26 +35,39 @@ export class AppController {
 
   @Get('logs')
   getStatistics() {
-    return JSON.stringify(this.logService.logs, null, 2)
+    return this.jsonBeautify(this.logService.logs);
   }
 
   @Get('orders')
   getOrders() {
-    return JSON.stringify(this.orderService.orders, null, 2)
+    return this.jsonBeautify(this.orderService.orders);
   }
 
   @Get('signals')
   getSignals() {
-    return JSON.stringify(this.telegramService.signals, null, 2)
+    return this.jsonBeautify(this.telegramService.signals);
   }
 
   @Get('prices')
   getPrices() {
-    return JSON.stringify(this.binanceService.prices, null, 2);
+    return this.jsonBeautify(this.binanceService.prices);
+  }
+
+  @Get('balances')
+  getBalances() {
+    const total = 10000;
+    const buyOnce = 1000;
+    const leverage = 1;
+    const data = this.balanceService.getBalances(total, buyOnce, leverage);
+    return this.jsonBeautify(data);
   }
 
   @Get('save')
   saveStorage() {
     return this.storageService.save();
+  }
+
+  jsonBeautify(data) {
+    return JSON.stringify(data, null, 2);
   }
 }

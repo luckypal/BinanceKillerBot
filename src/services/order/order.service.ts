@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { LogService } from '../log/log.service';
 import { BKSignal } from './models/bk-signal';
-import { BncOrder, OrderStatus } from './models/bn-corder';
+import { BncOrder, OrderType } from './models/bn-corder';
 
 @Injectable()
 export class OrderService {
@@ -19,7 +19,7 @@ export class OrderService {
       signal,
       signalId: signal.signalId,
       coin: signal.coin,
-      orderStatus: OrderStatus.buy,
+      orderType: OrderType.buy,
       price: signal.ote,
       lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
       leverage: 1,
@@ -41,7 +41,7 @@ export class OrderService {
   }
 
   updateBuyOrders(prices: Record<string, number>) {
-    const orders = Object.values(this.orders).filter(({ isActive, orderStatus }) => isActive && orderStatus == OrderStatus.buy);
+    const orders = Object.values(this.orders).filter(({ isActive, orderType }) => isActive && orderType == OrderType.buy);
     const defId = Date.now();
 
     orders.forEach((order, index) => {
@@ -64,8 +64,9 @@ export class OrderService {
         ...order,
         id: newOrderId,
         refOrderId: id,
-        orderStatus: OrderStatus.sell,
+        orderType: OrderType.sell,
         price: this.getTargetPrice(signal),
+        stopLoss: order.signal.stopLoss,
         lifeTime: -1,
         isActive: true
       };
@@ -78,32 +79,35 @@ export class OrderService {
   }
 
   updateSellOrders(prices: Record<string, number>) {
-    const orders = Object.values(this.orders).filter(({ isActive, orderStatus }) => isActive && orderStatus == OrderStatus.sell);
+    const orders = Object.values(this.orders).filter(({ isActive, orderType }) => isActive && orderType == OrderType.sell);
 
     orders.forEach(order => {
       const {
         id,
         coin,
-        price: targetPrice
+        price: targetPrice,
+        stopLoss
       } = order;
       const curPrice = prices[coin];
       if (!curPrice) return;
 
-      if (targetPrice > curPrice) return;
+      if (targetPrice < curPrice
+        || stopLoss > curPrice) {
+        // If price is bigger than target price, or price get smaller than stopLoss.
+        order.isActive = false;
+        if (stopLoss > curPrice) order.price = stopLoss;
 
-      // If price is bigger than target price
-      order.isActive = false;
-
-      this.logService.log(`Sell Order #${id} is completed.`, order);
+        this.logService.log(`Sell Order #${id} is completed.`, order);
+      }
     })
   }
 
   disableOldOrders() {
     const now = Date.now();
     const orders = Object.values(this.orders)
-      .filter(({ isActive, lifeTime, orderStatus }) =>
+      .filter(({ isActive, lifeTime, orderType }) =>
         isActive
-        && orderStatus == OrderStatus.sell
+        && orderType == OrderType.sell
         && lifeTime < now);
 
     orders.forEach(order => {

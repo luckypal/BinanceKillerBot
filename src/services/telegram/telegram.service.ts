@@ -18,7 +18,7 @@ export class TelegramService {
     private readonly orderService: OrderService,
     private readonly logService: LogService
   ) {
-    // setTimeout(() => this.start(), 1000);
+    setTimeout(() => this.start(), 1000);
   }
 
   start() {

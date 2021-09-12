@@ -1,6 +1,6 @@
 import { BKSignal } from "./bk-signal";
 
-export enum OrderStatus {
+export enum OrderType {
   buy = 0,
   sell = 1,
 }
@@ -16,9 +16,11 @@ export interface BncOrder {
 
   coin: string;
 
-  orderStatus: OrderStatus;
+  orderType: OrderType;
 
   price: number;
+
+  // amount: number; // Buy: USDT, Sell: Coin
 
   stopLoss?: number;
 
