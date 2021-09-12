@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
@@ -17,6 +17,18 @@ export class AppController {
     private readonly storageService: StorageService
   ) {
     setTimeout(() => this.storageService.save(), 10 * 1000);
+  }
+
+  @Get('tg/start')
+  tgAuth() {
+    return this.telegramService.start();
+  }
+
+  @Get('tg/verify/:code')
+  tgVerify(
+    @Param('code') code: string
+  ) {
+    return this.telegramService.verifyCode(code);
   }
 
   @Get('logs')

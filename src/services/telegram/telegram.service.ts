@@ -9,6 +9,8 @@ import { LogService } from '../log/log.service';
 @Injectable()
 export class TelegramService {
   mtproto: MTProto;
+  phoneCodeHash: string;
+
   private _signals: BKSignal[] = [];
 
   constructor(
@@ -16,7 +18,7 @@ export class TelegramService {
     private readonly orderService: OrderService,
     private readonly logService: LogService
   ) {
-    setTimeout(() => this.start(), 1000);
+    // setTimeout(() => this.start(), 1000);
   }
 
   start() {
@@ -95,7 +97,7 @@ export class TelegramService {
   async startAuth(phone_number) {
 
     console.log('[+] You must log in')
-    if (!phone_number) phone_number = await this.getPhone()
+    // if (!phone_number) phone_number = await this.getPhone()
 
     this.mtproto.call('auth.sendCode', {
       phone_number: phone_number,
@@ -120,20 +122,22 @@ export class TelegramService {
       })
       .then(async result => {
         console.log('Send Code', result)
-        return this.mtproto.call('auth.signIn', {
-          phone_code: await this.getCode(),
-          phone_number: phone_number,
-          phone_code_hash: result.phone_code_hash,
-        });
+        this.phoneCodeHash = result.phone_code_hash;
       })
-      .catch(error => {
-        console.log('auth.signIn ERROR', error);
-      })
-      .then(result => {
-        console.log('[+] successfully authenticated', result);
-        // start listener since the user has logged in now
-        this.startListener()
-      });
+  }
+
+  async verifyCode(code) {
+    this.mtproto.call('auth.signIn', {
+      phone_code: code,
+      phone_number: this.appEnvironment.phoneNumber,
+      phone_code_hash: this.phoneCodeHash,
+    }).then(result => {
+      console.log('[+] successfully authenticated', result);
+      // start listener since the user has logged in now
+      this.startListener()
+    }).catch(error => {
+      console.log('auth.signIn ERROR', error);
+    });
   }
 
 
