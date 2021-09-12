@@ -9,6 +9,7 @@ import { LogService } from '../log/log.service';
 @Injectable()
 export class TelegramService {
   mtproto: MTProto;
+  signals: BKSignal[] = [];
 
   constructor(
     private appEnvironment: AppEnvironment,
@@ -229,6 +230,7 @@ export class TelegramService {
     };
 
     this.orderService.onNewSignal(signalData);
+    this.signals.push(signalData);
 
     return signalData;
   }

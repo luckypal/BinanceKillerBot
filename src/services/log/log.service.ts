@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-interface Log {
+export interface Log {
   data,
   createdAt: Date
 }
