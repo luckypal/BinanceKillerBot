@@ -22,6 +22,8 @@ export interface BncOrder {
 
   stopLoss?: number;
 
+  lifeTime: number;
+
   leverage: number;
 
   isActive: boolean;

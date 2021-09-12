@@ -7,6 +7,7 @@ import { AppEnvironment } from './app.environment'
 import { BinanceService } from './services/binance/binance.service';
 import { OrderService } from './services/order/order.service';
 import { LogService } from './services/log/log.service';
+import { StorageService } from './services/storage/storage.service';
 
 @Module({
   imports: [
@@ -17,6 +18,13 @@ import { LogService } from './services/log/log.service';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService, TelegramService, BinanceService, OrderService, LogService],
+  providers: [
+    AppService,
+    TelegramService,
+    BinanceService,
+    OrderService,
+    LogService,
+    StorageService
+  ],
 })
 export class AppModule { }

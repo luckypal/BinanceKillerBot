@@ -9,22 +9,61 @@ import { LogService } from '../log/log.service';
 @Injectable()
 export class TelegramService {
   mtproto: MTProto;
-  signals: BKSignal[] = [];
+  private _signals: BKSignal[] = [];
 
   constructor(
-    private appEnvironment: AppEnvironment,
-    private orderService: OrderService,
-    private logService: LogService
+    private readonly appEnvironment: AppEnvironment,
+    private readonly orderService: OrderService,
+    private readonly logService: LogService
   ) {
+    setTimeout(() => this.start(), 1000);
+  }
+
+  start() {
     this.mtproto = new MTProto({
       api_id: this.appEnvironment.tgAppId,
       api_hash: this.appEnvironment.tgApiHash,
 
       storageOptions: {
-        path: './data/tg.json',
+        path: './data/tgAuth.json',
       },
     });
     this.mtproto.setDefaultDc(this.appEnvironment.tgDcId);
+
+    // const isProcess = true;
+    const isProcess = false;
+    if (isProcess) {
+      this.processMessage({
+        peer_id: { _: 'peerChannel', channel_id: 1178421859 },
+        date: 1631370197,
+        message: '📍SIGNAL ID: 0424📍\n' +
+          'COIN: $FIL/USDT (3-5x)\n' +
+          'Direction: LONG📈\n' +
+          '➖➖➖➖➖➖➖\n' +
+          "Broke out of its descending trend-line and confirmed one of our most important mid term fibs as support, we're in for a ride Killers😘\n" +
+          '\n' +
+          'ENTRY: 81 - 84.5\n' +
+          'OTE: 82.77\n' +
+          '\n' +
+          'TARGETS\n' +
+          'Short Term: 85.50 - 86.5 - 88 - 90\n' +
+          'Mid Term: 94 - 100 - 110 - 120\n' +
+          'Long Term: 135 - 150\n' +
+          '\n' +
+          'STOP LOSS: 75.67\n' +
+          '➖➖➖➖➖➖➖\n' +
+          'This message cannot be forwarded or replicated\n' +
+          '- Binance Killers®',
+      });
+    }
+  }
+
+  get signals() {
+    return this._signals;
+  }
+
+  set signals(data) {
+    this._signals = data;
   }
 
   async getPhone() {
@@ -230,7 +269,7 @@ export class TelegramService {
     };
 
     this.orderService.onNewSignal(signalData);
-    this.signals.push(signalData);
+    this._signals.push(signalData);
 
     return signalData;
   }

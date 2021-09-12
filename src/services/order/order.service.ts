@@ -5,10 +5,11 @@ import { BncOrder, OrderStatus } from './models/bn-corder';
 
 @Injectable()
 export class OrderService {
+  public BUY_ORDER_LIFETIME = 24 * 60 * 60 * 1000;
   orders: Record<number, BncOrder> = {};
 
   constructor(
-    private logService: LogService
+    private readonly logService: LogService
   ) { }
 
   onNewSignal(signal: BKSignal) {
@@ -20,10 +21,12 @@ export class OrderService {
       coin: signal.coin,
       orderStatus: OrderStatus.buy,
       price: signal.ote,
+      lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
       leverage: 1,
       isActive: true
     };
 
+    this.logService.log(`New Buy Order #${id} is created.`, newOrder);
     this.orders[id] = newOrder;
   }
 
@@ -34,6 +37,7 @@ export class OrderService {
   onUpdatePrices(prices: Record<string, number>) {
     this.updateBuyOrders(prices);
     this.updateSellOrders(prices);
+    this.disableOldOrders();
   }
 
   updateBuyOrders(prices: Record<string, number>) {
@@ -62,6 +66,7 @@ export class OrderService {
         refOrderId: id,
         orderStatus: OrderStatus.sell,
         price: this.getTargetPrice(signal),
+        lifeTime: -1,
         isActive: true
       };
 
@@ -91,5 +96,19 @@ export class OrderService {
 
       this.logService.log(`Sell Order #${id} is completed.`, order);
     })
+  }
+
+  disableOldOrders() {
+    const now = Date.now();
+    const orders = Object.values(this.orders)
+      .filter(({ isActive, lifeTime, orderStatus }) =>
+        isActive
+        && orderStatus == OrderStatus.sell
+        && lifeTime < now);
+
+    orders.forEach(order => {
+      order.isActive = false;
+      this.logService.log(`Buy Order #${order.id} is up to life time.`, order);
+    });
   }
 }
