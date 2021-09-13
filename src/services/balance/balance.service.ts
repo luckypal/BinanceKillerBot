@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BinanceService } from '../binance/binance.service';
-import { OrderType } from '../order/models/bn-corder';
+import { OrderStatus, OrderType } from '../order/models/bn-corder';
 import { OrderService } from '../order/order.service';
 
 @Injectable()
@@ -26,17 +26,23 @@ export class BalanceService {
       const {
         coin,
         price,
-        orderType,
-        isActive
+        stopLoss,
+        type,
+        status
       } = order;
       if (!balances[coin]) balances[coin] = 0;
-      if (isActive) return;
+      if (
+        status == OrderStatus.active
+        || status == OrderStatus.timeout) return;
 
-      if (orderType == OrderType.buy) {
+      if (type == OrderType.buy) {
         balances.USDT -= buyAmount * leverage;
         balances[coin] += buyAmount * leverage / price;
       } else {
-        balances.USDT += balances[coin] * price;
+        if (status == OrderStatus.processed)
+          balances.USDT += balances[coin] * price;
+        else
+          balances.USDT += balances[coin] * stopLoss;
         balances[coin] = 0;
       }
     });

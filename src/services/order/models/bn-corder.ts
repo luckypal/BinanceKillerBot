@@ -5,6 +5,16 @@ export enum OrderType {
   sell = 1,
 }
 
+export enum OrderStatus {
+  active = 0,
+
+  processed = 1,
+
+  stopLess = 2,
+
+  timeout = 3
+}
+
 export interface BncOrder {
   id: number;
 
@@ -16,7 +26,7 @@ export interface BncOrder {
 
   coin: string;
 
-  orderType: OrderType;
+  type: OrderType;
 
   price: number;
 
@@ -28,5 +38,5 @@ export interface BncOrder {
 
   leverage: number;
 
-  isActive: boolean;
+  status: OrderStatus;
 }
