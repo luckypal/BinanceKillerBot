@@ -30,8 +30,10 @@ export class OrderService {
     this.orders[id] = newOrder;
   }
 
-  getTargetPrice(signal: BKSignal) {
-    return signal.terms.short[0]
+  getSellPrice(signal: BKSignal) {
+    const { short } = signal.terms;
+    if (short.length == 0) return signal.terms.mid[0];
+    return short[short.length - 1];
   }
 
   onUpdatePrices(prices: Record<string, number>) {
@@ -65,7 +67,7 @@ export class OrderService {
         id: newOrderId,
         refOrderId: id,
         orderType: OrderType.sell,
-        price: this.getTargetPrice(signal),
+        price: this.getSellPrice(signal),
         stopLoss: order.signal.stopLoss,
         lifeTime: -1,
         isActive: true
