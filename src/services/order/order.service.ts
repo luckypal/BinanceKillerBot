@@ -107,7 +107,8 @@ export class OrderService {
     const orders = Object.values(this.orders)
       .filter(({ isActive, lifeTime, orderType }) =>
         isActive
-        && orderType == OrderType.sell
+        && orderType == OrderType.buy
+        && lifeTime != -1
         && lifeTime < now);
 
     orders.forEach(order => {
