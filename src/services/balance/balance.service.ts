@@ -20,6 +20,7 @@ export class BalanceService {
     };
     const { prices } = this.binanceService;
     const { orders } = this.orderService;
+    const usdts = {};
 
     Object.values(orders).forEach(order => {
       const {
@@ -33,7 +34,7 @@ export class BalanceService {
 
       if (orderType == OrderType.buy) {
         balances.USDT -= buyAmount * leverage;
-        balances[coin] += buyAmount / price;
+        balances[coin] += buyAmount * leverage / price;
       } else {
         balances.USDT += balances[coin] * price;
         balances[coin] = 0;
@@ -46,11 +47,13 @@ export class BalanceService {
       const price = prices[coin];
       if (!price) continue;
       totalBalance += price * balances[coin];
+      usdts[coin] = price * balances[coin];
     }
 
     return {
       total: totalBalance,
       coins: balances,
+      usdts
     };
   }
 }

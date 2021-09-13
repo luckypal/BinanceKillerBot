@@ -20,7 +20,7 @@ export class OrderService {
       signalId: signal.signalId,
       coin: signal.coin,
       orderType: OrderType.buy,
-      price: signal.ote,
+      price: Math.min(...signal.entry),
       lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
       leverage: 1,
       isActive: true
