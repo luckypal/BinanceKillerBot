@@ -14,5 +14,5 @@ permissions:
       - file
 hooks:
   ApplicationStart:
-    - location: scripts/reload-pm2.sh
+    - location: pm2/reload-pm2.sh
       runas: ubuntu
