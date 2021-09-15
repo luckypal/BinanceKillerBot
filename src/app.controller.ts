@@ -16,13 +16,16 @@ export class AppController {
     private readonly storageService: StorageService,
     private readonly strategyService: StrategyService
   ) {
-    setInterval(() => this.storageService.save(), 60 * 1000);
     setTimeout(() => this.startController(), 1000);
   }
 
   startController() {
     this.strategyService.createStrategy();
     this.storageService.load();
+    this.binanceService.start();
+    setTimeout(() => {
+      this.telegramService.start();
+    }, 2000);
   }
 
   @Get('tg/start')
@@ -50,6 +53,12 @@ export class AppController {
   @Get('prices')
   getPrices() {
     return this.jsonBeautify(this.binanceService.prices);
+  }
+
+  @Get('orders')
+  getOrders() {
+    const data = this.strategyService.getData()
+    return this.jsonBeautify(data);
   }
 
   @Get('balances')

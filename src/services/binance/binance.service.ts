@@ -12,9 +12,7 @@ export class BinanceService {
   constructor(
     private readonly appEnvironment: AppEnvironment,
     private eventEmitter: EventEmitter2
-  ) {
-    setTimeout(() => this.start(), 1000);
-  }
+  ) {}
 
   start() {
     this.binance = BinanceApi({

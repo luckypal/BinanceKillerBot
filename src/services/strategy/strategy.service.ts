@@ -63,7 +63,7 @@ export class StrategyService {
       if (method.indexOf('shortest') >= 0) property.getSellPrice = (signal) => signal.terms.short[0];
       if (method.indexOf('shortmax') >= 0) property.getSellPrice = (signal) => signal.terms.short[signal.terms.short.length - 1];
 
-      if (method.indexOf('highleverage') >= 0) property.getLeverage = (signal) => signal.terms.short[signal.terms.short.length - 1];
+      if (method.indexOf('highleverage') >= 0) property.getLeverage = (signal) => signal.leverage[signal.leverage.length - 1];
       if (method.indexOf('normalleverage') >= 0) property.getLeverage = (signal) => signal.leverage[0];
       if (method.indexOf('noleverage') >= 0) property.getLeverage = (signal) => 1;
 
@@ -87,14 +87,18 @@ export class StrategyService {
   }
 
   getBalances(total: number, amountBuyOnce: number) {
-    Object.values(this.strategies).map(strategy => {
+    return Object.values(this.strategies).map(strategy => {
       const { strategyId } = strategy;
       const balances = strategy.getBalances(total, amountBuyOnce);
       return {
         strategyId,
-        balances
+        ...balances
       };
-    })
+    }).sort(({ total: { TOTAL: a } }, { total: { TOTAL: b } }) => {
+      if (a > b) return -1;
+      if (a < b) return 1;
+      return 0;
+    });
   }
 
   getData() {

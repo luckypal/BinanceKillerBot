@@ -17,9 +17,7 @@ export class TelegramService {
     private eventEmitter: EventEmitter2,
     private readonly logService: LogService,
     private readonly appEnvironment: AppEnvironment,
-  ) {
-    setTimeout(() => this.start(), 1000);
-  }
+  ) { }
 
   start() {
     this.mtproto = new MTProto({

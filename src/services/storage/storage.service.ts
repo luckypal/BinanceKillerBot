@@ -7,8 +7,10 @@ import { StrategyService } from '../strategy/strategy.service';
 
 @Injectable()
 export class StorageService {
-  filePath = './data/data.json';
-  store;
+  fileDir = './data';
+  dataFilePath = `${this.fileDir}/data.json`;
+  signalsFilePath = `${this.fileDir}/signals.json`;
+  logsFilePath = `${this.fileDir}/logs.json`;
 
   constructor(
     public readonly strategyService: StrategyService,
@@ -22,23 +24,27 @@ export class StorageService {
     const signals = this.telegramService.signals;
     const logs = this.logService.logs;
 
-    const storeData = {
-      data,
-      signals,
-      logs
-    }
-    fs.writeFileSync(this.filePath, JSON.stringify(storeData), { encoding: 'utf8' });
+    this.saveFile(this.dataFilePath, data);
+    this.saveFile(this.signalsFilePath, signals);
+    this.saveFile(this.logsFilePath, logs);
+    return true;
+  }
 
-    return storeData;
+  saveFile(filePath, data) {
+    fs.writeFileSync(filePath, JSON.stringify(data), { encoding: 'utf8' });
+  }
+
+  loadFile(filePath) {
+    if (!fs.existsSync(filePath)) return null;
+    const str = fs.readFileSync(filePath, { encoding: 'utf8' });
+    return JSON.parse(str);
   }
 
   async load() {
-    if (!fs.existsSync(this.filePath)) return;
+    this.strategyService.setData(this.loadFile(this.dataFilePath) || {});
+    this.telegramService.signals = this.loadFile(this.signalsFilePath) || [];
+    this.logService.logs = this.loadFile(this.logService) || [];
 
-    const str = fs.readFileSync(this.filePath, { encoding: 'utf8' });
-    const data = JSON.parse(str);
-    this.strategyService.setData(data.data);
-    this.telegramService.signals = data.signals;
-    this.logService.logs = data.logs;
+    setInterval(() => this.save(), 60 * 1000);
   }
 }

@@ -60,12 +60,14 @@ export class BaseStrategy {
   }
 
   getBuyPrice(signal: BKSignal, price: number) {
+    let buyPrice = 0;
     try {
       if (this.orderProperty && this.orderProperty.getBuyPrice)
-        return this.orderProperty.getBuyPrice(signal, price);
+        buyPrice = this.orderProperty.getBuyPrice(signal, price);
+      return signal.ote;
     } catch (e) { console.log(this.strategyId, 'getBuyPrice', signal, e) }
 
-    return signal.ote;
+    return Math.min(Math.max(...signal.entry), buyPrice);
   }
 
   getSellPrice(signal: BKSignal) {
@@ -220,9 +222,7 @@ export class BaseStrategy {
     });
 
     let totalBalance = balances.SPOT - balances.LOAN;
-
     for (const coin in balances) {
-      if (coin == 'USDT') continue;
       const price = prices[coin];
       if (!price) continue;
       totalBalance += price * balances[coin];
@@ -231,9 +231,9 @@ export class BaseStrategy {
 
     return {
       total: {
+        TOTAL: totalBalance,
         SPOT: balances.SPOT,
         LOAN: balances.LOAN,
-        TOTAL: totalBalance,
       },
       USDT: usdts,
       coins: balances,
