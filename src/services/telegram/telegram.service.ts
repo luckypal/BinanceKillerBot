@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import * as MTProto from '@mtproto/core';
 import * as prompts from 'prompts';
 import { AppEnvironment } from 'src/app.environment';
-import { OrderService } from '../order/order.service';
 import { BKSignal, BKSignalTerms } from '../order/models/bk-signal';
 import { LogService } from '../log/log.service';
+import { EventEmitter2 } from 'eventemitter2';
 
 @Injectable()
 export class TelegramService {
@@ -14,9 +14,9 @@ export class TelegramService {
   private _signals: BKSignal[] = [];
 
   constructor(
+    private eventEmitter: EventEmitter2,
+    private readonly logService: LogService,
     private readonly appEnvironment: AppEnvironment,
-    private readonly orderService: OrderService,
-    private readonly logService: LogService
   ) {
     setTimeout(() => this.start(), 1000);
   }
@@ -203,7 +203,9 @@ export class TelegramService {
     const msgs = line.split(' ');
     if (msgs[0] != 'COIN:') return null;
     const coin = this.strReplace(msgs[1], ['$', '/'], '');
-    const leverage = this.splitValues(this.strReplace(msgs[2], ['(', 'x', ')'], ''));
+    let leverage = this.splitValues(this.strReplace(msgs[2], ['(', 'x', ')'], ''));
+    if (leverage.length == 0) leverage = [1];
+
     return {
       coin,
       leverage
@@ -287,7 +289,7 @@ export class TelegramService {
       stopLoss
     };
 
-    this.orderService.onNewSignal(signalData);
+    this.eventEmitter.emit('telegram.onSignal', signalData);
     this._signals.push(signalData);
 
     return signalData;

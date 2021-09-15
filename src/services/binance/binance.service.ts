@@ -1,7 +1,7 @@
 import BinanceApi, { Binance } from 'binance-api-node'
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
-import { OrderService } from '../order/order.service';
 
 @Injectable()
 export class BinanceService {
@@ -11,7 +11,7 @@ export class BinanceService {
 
   constructor(
     private readonly appEnvironment: AppEnvironment,
-    private readonly orderService: OrderService
+    private eventEmitter: EventEmitter2
   ) {
     setTimeout(() => this.start(), 1000);
   }
@@ -21,12 +21,13 @@ export class BinanceService {
       apiKey: this.appEnvironment.bncApiKey,
       apiSecret: this.appEnvironment.bncSecKey
     });
+
     this.updatePrice();
   }
 
   async updatePrice() {
     this.prices = await this.binance.prices();
-    this.orderService.onUpdatePrices(this.prices);
+    this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
 
     const { bncUpdateInterval } = this.appEnvironment;
     setTimeout(() => this.updatePrice(), bncUpdateInterval * 1000);

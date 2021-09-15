@@ -11,7 +11,7 @@ export interface BKSignal {
 
   coin: string;
 
-  leverage: string[];
+  leverage: number[];
 
   entry: number[];
 

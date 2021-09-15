@@ -3,22 +3,27 @@ import { AppService } from './app.service';
 import { BalanceService } from './services/balance/balance.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
-import { OrderService } from './services/order/order.service';
 import { StorageService } from './services/storage/storage.service';
+import { StrategyService } from './services/strategy/strategy.service';
 import { TelegramService } from './services/telegram/telegram.service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly orderService: OrderService,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
     private readonly balanceService: BalanceService,
     private readonly logService: LogService,
-    private readonly storageService: StorageService
+    private readonly storageService: StorageService,
+    private readonly strategyService: StrategyService
   ) {
-    setTimeout(() => this.storageService.save(), 10 * 1000);
+    setInterval(() => this.storageService.save(), 60 * 1000);
+    setTimeout(() => this.startController(), 1000);
+  }
+
+  startController() {
+    this.strategyService.createStrategy();
   }
 
   @Get('tg/start')
@@ -36,11 +41,6 @@ export class AppController {
   @Get('logs')
   getStatistics() {
     return this.jsonBeautify(this.logService.logs);
-  }
-
-  @Get('orders')
-  getOrders() {
-    return this.jsonBeautify(this.orderService.orders);
   }
 
   @Get('signals')
