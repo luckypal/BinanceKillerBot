@@ -161,11 +161,11 @@ export class TelegramService {
   startListener = () => {
     console.log('[+] starting listener')
     this.mtproto.updates.on('updates', ({ updates }) => {
-      console.log('TG UPDATES', updates);
       const newChannelMessages = updates.filter((update) => update._ === 'updateNewChannelMessage').map(({ message }) => message) // filter `updateNewChannelMessage` types only and extract the 'message' object
 
       if (newChannelMessages.length == 0) return;
       const message = newChannelMessages[0];
+      console.log('TG UPDATES', message);
       if (!message) return;
 
       const { peer_id: { channel_id = 0 } = {} } = message;
