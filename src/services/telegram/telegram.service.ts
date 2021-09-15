@@ -165,7 +165,7 @@ export class TelegramService {
 
       if (newChannelMessages.length == 0) return;
       const message = newChannelMessages[0];
-      console.log('TG UPDATES', message);
+      // console.log('TG UPDATES', message);
       if (!message) return;
 
       const { peer_id: { channel_id = 0 } = {} } = message;

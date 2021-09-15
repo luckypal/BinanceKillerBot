@@ -1,6 +1,6 @@
 [
   {
-    "name": "Binance Killer Bot",
+    "name": "Binance-Killer-Bot",
     "script": "dist/main.js",
     "merge_logs": true,
     "instances": 1,

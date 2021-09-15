@@ -11,7 +11,7 @@ export interface OrderProperty {
 
   getSellPrice?: (signal: BKSignal) => number;
 
-  getStopLoss?: (signal: BKSignal, price: number, leverage: number) => number;
+  getStopLoss?: (signal: BKSignal, price: number, leverage: number, currentStopLoss: number) => number;
 }
 
 export class BaseStrategy {
@@ -99,16 +99,17 @@ export class BaseStrategy {
     return short[short.length - 1];
   }
 
-  getStopLoss(signal: BKSignal, price: number, leverage: number) {
+  getStopLoss(signal: BKSignal, price: number, leverage: number, currentStopLoss: number) {
     let newStopLoss = 0
     try {
       if (this.orderProperty && this.orderProperty.getStopLoss)
-        newStopLoss = this.orderProperty.getStopLoss(signal, price, leverage);
+        newStopLoss = this.orderProperty.getStopLoss(signal, price, leverage, currentStopLoss);
     } catch (e) { console.log(this.strategyId, 'getStopLoss', signal, e) }
 
     const { stopLoss } = signal;
-    const limit = price * (1 - 1 / leverage / 2);
-    return Math.max(newStopLoss, stopLoss, limit);
+    let limit = 0;
+    if (currentStopLoss == 0) limit = price * (1 - 1 / leverage / 2);
+    return Math.max(newStopLoss, stopLoss, limit, currentStopLoss);
   }
 
   onUpdatePrices(prices: Record<string, number>) {
@@ -147,7 +148,7 @@ export class BaseStrategy {
         refOrderId: id,
         type: OrderType.sell,
         price: this.getSellPrice(signal),
-        stopLoss: this.getStopLoss(signal, targetPrice, leverage),
+        stopLoss: this.getStopLoss(signal, targetPrice, leverage, 0),
         lifeTime: -1,
         status: OrderStatus.active
       };
@@ -165,17 +166,26 @@ export class BaseStrategy {
     orders.forEach(order => {
       const {
         id,
+        signalId,
         coin,
         price: targetPrice,
+        leverage,
         stopLoss
       } = order;
       const curPrice = prices[coin];
       if (!curPrice) return;
 
+      const signal = this.telegramService.signals[signalId];
+      const newStopLoss = this.getStopLoss(signal, curPrice, leverage, stopLoss);
+      if (newStopLoss != stopLoss) {
+        this.logService.log(this.strategyId, `Sell Order #${id}: Stop Loss is changed. ${stopLoss} => ${newStopLoss} [ price: ${curPrice} ]`);
+        order.stopLoss = newStopLoss;
+      }
+
       if (targetPrice < curPrice
-        || stopLoss > curPrice) {
+        || newStopLoss > curPrice) {
         // If price is bigger than target price, or price get smaller than stopLoss.
-        if (stopLoss > curPrice) {
+        if (newStopLoss > curPrice) {
           order.status = OrderStatus.stopLess;
         } else {
           order.status = OrderStatus.processed;

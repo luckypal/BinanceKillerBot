@@ -44,6 +44,14 @@ export class StrategyService {
       [
         "shortest",
         "shortmax",
+        "midest",
+        "midmax",
+        "longest"
+      ],
+      [
+        "orgstop",
+        "minentrystop",
+        "dynamicstop"
       ],
       [
         "highleverage",
@@ -63,10 +71,17 @@ export class StrategyService {
       if (method.indexOf('min') >= 0) property.getBuyPrice = (signal, price) => Math.min(...signal.entry);
 
       if (method.indexOf('shortest') >= 0) property.getSellPrice = (signal) => signal.terms.short[0];
-      if (method.indexOf('shortmax') >= 0) property.getSellPrice = (signal) => signal.terms.short[signal.terms.short.length - 1];
+      if (method.indexOf('shortmax') >= 0) property.getSellPrice = (signal) => Math.max(...signal.terms.short);
+      if (method.indexOf('midest') >= 0) property.getSellPrice = (signal) => Math.max(...signal.terms.short, Math.min(...signal.terms.mid));
+      if (method.indexOf('midmax') >= 0) property.getSellPrice = (signal) => Math.max(...signal.terms.mid);
+      if (method.indexOf('longest') >= 0) property.getSellPrice = (signal) => Math.max(...signal.terms.mid, ...signal.terms.long);
 
-      if (method.indexOf('highleverage') >= 0) property.getLeverage = (signal) => signal.leverage[signal.leverage.length - 1];
-      if (method.indexOf('normalleverage') >= 0) property.getLeverage = (signal) => signal.leverage[0];
+      if (method.indexOf('orgstop') >= 0) property.getStopLoss = (signal, price, leverage, currentStopLoss) => signal.stopLoss;
+      if (method.indexOf('minentrystop') >= 0) property.getStopLoss = (signal, price, leverage, currentStopLoss) => Math.min(...signal.entry) * 0.99;
+      if (method.indexOf('dynamicstop') >= 0) property.getStopLoss = this.getDynamicStopLoss;
+
+      if (method.indexOf('highleverage') >= 0) property.getLeverage = (signal) => Math.max(...signal.leverage);
+      if (method.indexOf('normalleverage') >= 0) property.getLeverage = (signal) => Math.min(...signal.leverage);
       if (method.indexOf('noleverage') >= 0) property.getLeverage = (signal) => 1;
 
       this.strategies[method] = new BaseStrategy(
@@ -79,8 +94,32 @@ export class StrategyService {
     });
   }
 
+  getDynamicStopLoss(signal: BKSignal, price: number, leverage: number, currentStopLoss: number) {
+    const entryStop = Math.min(...signal.entry) * 0.99;
+    const terms = [
+      ...signal.terms.short,
+      ...signal.terms.mid,
+      ...signal.terms.long,
+    ]
+    const points = [
+      signal.stopLoss,
+      signal.stopLoss,
+      entryStop,
+      ...terms
+    ];
+    for (let i = 2; i < points.length; i++) {
+      const point = points[i];
+      if (point > price) return points[i - 2];
+    }
+    return entryStop;
+  }
+
   @OnEvent('telegram.onSignal')
   onNewSignal(signal: BKSignal) {
+    if (signal.entry[0] != Math.min(...signal.entry)) {
+      this.logService.log('Falling with margin is not supported yet.');
+      return;
+    }
     Object.values(this.strategies).forEach(strategy => strategy.onNewSignal(signal));
 
     const { prices } = this.binanceService;
