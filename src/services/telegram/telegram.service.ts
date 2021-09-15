@@ -11,7 +11,7 @@ export class TelegramService {
   mtproto: MTProto;
   phoneCodeHash: string;
 
-  private _signals: BKSignal[] = [];
+  private _signals: Record<number, BKSignal> = {};
 
   constructor(
     private eventEmitter: EventEmitter2,
@@ -288,7 +288,7 @@ export class TelegramService {
     };
 
     this.eventEmitter.emit('telegram.onSignal', signalData);
-    this._signals.push(signalData);
+    this._signals[signalId] = signalData;
 
     return signalData;
   }

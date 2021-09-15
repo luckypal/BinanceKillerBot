@@ -12,7 +12,9 @@ export enum OrderStatus {
 
   stopLess = 2,
 
-  timeout = 3
+  timeout = 3,
+
+  cancelled = 4
 }
 
 export interface BncOrder {
@@ -22,7 +24,7 @@ export interface BncOrder {
 
   signalId: number;
 
-  signal: BKSignal;
+  // signal: BKSignal;
 
   coin: string;
 

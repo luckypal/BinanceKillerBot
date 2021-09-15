@@ -1,5 +1,6 @@
 import { BinanceService } from 'src/services/binance/binance.service';
 import { LogService } from 'src/services/log/log.service';
+import { TelegramService } from 'src/services/telegram/telegram.service';
 import { BKSignal } from '../../models/bk-signal';
 import { BncOrder, OrderStatus, OrderType } from '../../models/bnc-order';
 
@@ -22,10 +23,14 @@ export class BaseStrategy {
     public readonly strategyId: string,
     private readonly orderProperty: OrderProperty,
     private readonly logService: LogService,
-    private readonly binanceService: BinanceService
+    private readonly binanceService: BinanceService,
+    private readonly telegramService: TelegramService
   ) { }
 
   onNewSignal(signal: BKSignal) {
+    const hasSameOrder = this.cancelOldSameOrders(signal);
+    if (hasSameOrder) return;
+
     const id = Date.now()
     const { prices } = this.binanceService
     const {
@@ -36,7 +41,6 @@ export class BaseStrategy {
     const leverage = this.getLeverage(signal);
     const newOrder: BncOrder = {
       id,
-      signal,
       signalId: signalId,
       coin: coin,
       type: OrderType.buy,
@@ -48,6 +52,22 @@ export class BaseStrategy {
 
     this.logService.log(this.strategyId, `New Buy Order #${id} is created.`, newOrder);
     this.orders[id] = newOrder;
+  }
+
+  cancelOldSameOrders(signal: BKSignal) {
+    Object.values(this.orders)
+      .filter(({ coin, status, type }) =>
+        coin == signal.coin
+        && status == OrderStatus.active
+        && type == OrderType.buy)
+      .forEach(order => order.status = OrderStatus.cancelled);
+
+    const oldSellOrders = Object.values(this.orders)
+      .filter(({ coin, status, type }) =>
+        coin == signal.coin
+        && status == OrderStatus.active
+        && type == OrderType.sell)
+    return !!oldSellOrders.length
   }
 
   getLeverage(signal: BKSignal) {
@@ -64,7 +84,7 @@ export class BaseStrategy {
     try {
       if (this.orderProperty && this.orderProperty.getBuyPrice)
         buyPrice = this.orderProperty.getBuyPrice(signal, price);
-      return signal.ote;
+      else return signal.ote;
     } catch (e) { console.log(this.strategyId, 'getBuyPrice', signal, e) }
 
     return Math.min(Math.max(...signal.entry), buyPrice);
@@ -118,9 +138,10 @@ export class BaseStrategy {
       order.status = OrderStatus.processed;
 
       const {
-        signal,
+        signalId,
         leverage
       } = order;
+      const signal = this.telegramService.signals[signalId];
       const newOrderId = defId + index;
       const newOrder: BncOrder = {
         ...order,
@@ -204,8 +225,8 @@ export class BaseStrategy {
       } = order;
       if (!balances[coin]) balances[coin] = 0;
       if (
-        status == OrderStatus.active
-        || status == OrderStatus.timeout) return;
+        status != OrderStatus.processed
+        && status != OrderStatus.stopLess) return;
 
       if (type == OrderType.buy) {
         balances.SPOT -= buyAmount;

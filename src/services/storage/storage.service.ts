@@ -42,9 +42,10 @@ export class StorageService {
 
   async load() {
     this.strategyService.setData(this.loadFile(this.dataFilePath) || {});
-    this.telegramService.signals = this.loadFile(this.signalsFilePath) || [];
+    this.telegramService.signals = this.loadFile(this.signalsFilePath) || {};
     this.logService.logs = this.loadFile(this.logService) || [];
 
+    setTimeout(() => this.save(), 5 * 1000);
     setInterval(() => this.save(), 60 * 1000);
   }
 }
