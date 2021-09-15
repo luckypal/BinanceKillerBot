@@ -1,6 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AppService } from './app.service';
-import { BalanceService } from './services/balance/balance.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
@@ -13,7 +12,6 @@ export class AppController {
     private readonly appService: AppService,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
-    private readonly balanceService: BalanceService,
     private readonly logService: LogService,
     private readonly storageService: StorageService,
     private readonly strategyService: StrategyService
@@ -24,6 +22,7 @@ export class AppController {
 
   startController() {
     this.strategyService.createStrategy();
+    this.storageService.load();
   }
 
   @Get('tg/start')
@@ -57,8 +56,7 @@ export class AppController {
   getBalances() {
     const total = 10000;
     const buyOnce = 1000;
-    const leverage = 1;
-    const data = this.balanceService.getBalances(total, buyOnce, leverage);
+    const data = this.strategyService.getBalances(total, buyOnce);
     return this.jsonBeautify(data);
   }
 

@@ -1,7 +1,7 @@
 import { BinanceService } from 'src/services/binance/binance.service';
 import { LogService } from 'src/services/log/log.service';
-import { BKSignal } from '../../services/order/models/bk-signal';
-import { BncOrder, OrderStatus, OrderType } from '../../services/order/models/bn-corder';
+import { BKSignal } from '../../models/bk-signal';
+import { BncOrder, OrderStatus, OrderType } from '../../models/bnc-order';
 
 export interface OrderProperty {
   getLeverage?: (signal: BKSignal) => number;
@@ -19,7 +19,7 @@ export class BaseStrategy {
   orders: Record<number, BncOrder> = {};
 
   constructor(
-    private readonly strategyId: string,
+    public readonly strategyId: string,
     private readonly orderProperty: OrderProperty,
     private readonly logService: LogService,
     private readonly binanceService: BinanceService
@@ -42,7 +42,7 @@ export class BaseStrategy {
       type: OrderType.buy,
       price: this.getBuyPrice(signal, price),
       lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
-      leverage: leverage,
+      leverage,
       status: OrderStatus.active
     };
 
@@ -115,9 +115,11 @@ export class BaseStrategy {
       // If price is smaller than target price
       order.status = OrderStatus.processed;
 
-      const { signal } = order;
+      const {
+        signal,
+        leverage
+      } = order;
       const newOrderId = defId + index;
-      const leverage = this.getLeverage(signal);
       const newOrder: BncOrder = {
         ...order,
         id: newOrderId,
@@ -176,5 +178,65 @@ export class BaseStrategy {
       order.status = OrderStatus.timeout;
       this.logService.log(this.strategyId, `Buy Order #${order.id} is up to life time.`, order);
     });
+  }
+
+  getBalances(
+    primaryUsdt: number,
+    buyAmount: number,
+  ) {
+    const balances = {
+      SPOT: primaryUsdt,
+      LOAN: 0
+    };
+    const { prices } = this.binanceService;
+    const usdts = {};
+
+    Object.values(this.orders).forEach(order => {
+      const {
+        coin,
+        price,
+        stopLoss,
+        leverage,
+        type,
+        status
+      } = order;
+      if (!balances[coin]) balances[coin] = 0;
+      if (
+        status == OrderStatus.active
+        || status == OrderStatus.timeout) return;
+
+      if (type == OrderType.buy) {
+        balances.SPOT -= buyAmount;
+        balances.LOAN += buyAmount * (leverage - 1);
+        balances[coin] += buyAmount * leverage / price;
+      } else {
+        let sellPrice = price;
+        if (status == OrderStatus.stopLess) sellPrice = stopLoss;
+
+        balances.SPOT += balances[coin] * sellPrice;
+        balances.LOAN -= buyAmount * (leverage - 1);
+        balances[coin] = 0;
+      }
+    });
+
+    let totalBalance = balances.SPOT - balances.LOAN;
+
+    for (const coin in balances) {
+      if (coin == 'USDT') continue;
+      const price = prices[coin];
+      if (!price) continue;
+      totalBalance += price * balances[coin];
+      usdts[coin] = price * balances[coin];
+    }
+
+    return {
+      total: {
+        SPOT: balances.SPOT,
+        LOAN: balances.LOAN,
+        TOTAL: totalBalance,
+      },
+      USDT: usdts,
+      coins: balances,
+    };
   }
 }

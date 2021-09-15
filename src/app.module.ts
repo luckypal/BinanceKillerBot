@@ -8,7 +8,6 @@ import { AppEnvironment } from './app.environment'
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
-import { BalanceService } from './services/balance/balance.service';
 import { StrategyService } from './services/strategy/strategy.service';
 
 @Module({
@@ -27,7 +26,6 @@ import { StrategyService } from './services/strategy/strategy.service';
     BinanceService,
     LogService,
     StorageService,
-    BalanceService,
     StrategyService
   ],
 })

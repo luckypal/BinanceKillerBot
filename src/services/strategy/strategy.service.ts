@@ -3,13 +3,14 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { BaseStrategy, OrderProperty } from 'src/libs/strategy/base-strategy';
 import { BinanceService } from '../binance/binance.service';
 import { LogService } from '../log/log.service';
-import { BKSignal } from '../order/models/bk-signal';
+import { BKSignal } from '../../models/bk-signal';
+import { BncOrder } from 'src/models/bnc-order';
 
 @Injectable()
 export class StrategyService {
   strategyProps: string[][] = [];
   strategyKeys: string[] = [];
-  strategies: BaseStrategy[] = [];
+  strategies: Record<string, BaseStrategy> = {};
 
   constructor(
     private readonly logService: LogService,
@@ -66,24 +67,47 @@ export class StrategyService {
       if (method.indexOf('normalleverage') >= 0) property.getLeverage = (signal) => signal.leverage[0];
       if (method.indexOf('noleverage') >= 0) property.getLeverage = (signal) => 1;
 
-      this.strategies.push(
-        new BaseStrategy(
-          method,
-          property,
-          this.logService,
-          this.binanceService
-        )
+      this.strategies[method] = new BaseStrategy(
+        method,
+        property,
+        this.logService,
+        this.binanceService
       );
     });
   }
 
   @OnEvent('telegram.onSignal')
   onNewSignal(signal: BKSignal) {
-    this.strategies.forEach(strategy => strategy.onNewSignal(signal));
+    Object.values(this.strategies).forEach(strategy => strategy.onNewSignal(signal));
   }
 
   @OnEvent('binance.onUpdatePrices')
   onUpdatePrices(prices: Record<string, number>) {
-    this.strategies.forEach(strategy => strategy.onUpdatePrices(prices));
+    Object.values(this.strategies).forEach(strategy => strategy.onUpdatePrices(prices));
+  }
+
+  getBalances(total: number, amountBuyOnce: number) {
+    Object.values(this.strategies).map(strategy => {
+      const { strategyId } = strategy;
+      const balances = strategy.getBalances(total, amountBuyOnce);
+      return {
+        strategyId,
+        balances
+      };
+    })
+  }
+
+  getData() {
+    const data = {};
+    for (const strategyId in this.strategies) {
+      data[strategyId] = this.strategies[strategyId].orders
+    }
+    return data;
+  }
+
+  setData(data: Record<string, Record<number, BncOrder>>) {
+    for (const strategyId in data) {
+      this.strategies[strategyId].orders = data[strategyId]
+    }
   }
 }

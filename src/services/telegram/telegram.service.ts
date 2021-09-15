@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as MTProto from '@mtproto/core';
 import * as prompts from 'prompts';
 import { AppEnvironment } from 'src/app.environment';
-import { BKSignal, BKSignalTerms } from '../order/models/bk-signal';
+import { BKSignal, BKSignalTerms } from '../../models/bk-signal';
 import { LogService } from '../log/log.service';
 import { EventEmitter2 } from 'eventemitter2';
 
