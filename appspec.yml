@@ -1,9 +1,7 @@
-invidme-bot-codedeploy
-
 version: 0.0
 os: linux
 files:
-  - source: /
+  - source: .
     destination: /home/ubuntu/bkiller/BinanceKillerBot
 permissions:
   - object: /home/ubuntu
@@ -15,4 +13,5 @@ permissions:
 hooks:
   ApplicationStart:
     - location: pm2/reload-pm2.sh
+      timeout: 3600
       runas: ubuntu
