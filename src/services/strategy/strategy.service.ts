@@ -82,6 +82,9 @@ export class StrategyService {
   @OnEvent('telegram.onSignal')
   onNewSignal(signal: BKSignal) {
     Object.values(this.strategies).forEach(strategy => strategy.onNewSignal(signal));
+
+    const { prices } = this.binanceService;
+    Object.values(this.strategies).forEach(strategy => strategy.onUpdatePrices(prices));
   }
 
   @OnEvent('binance.onUpdatePrices')

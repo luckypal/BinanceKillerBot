@@ -80,14 +80,12 @@ export class BaseStrategy {
   }
 
   getBuyPrice(signal: BKSignal, price: number) {
-    let buyPrice = 0;
     try {
       if (this.orderProperty && this.orderProperty.getBuyPrice)
-        buyPrice = this.orderProperty.getBuyPrice(signal, price);
-      else return signal.ote;
+        return this.orderProperty.getBuyPrice(signal, price);
     } catch (e) { console.log(this.strategyId, 'getBuyPrice', signal, e) }
 
-    return Math.min(Math.max(...signal.entry), buyPrice);
+    return signal.ote;
   }
 
   getSellPrice(signal: BKSignal) {

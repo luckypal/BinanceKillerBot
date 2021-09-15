@@ -284,7 +284,8 @@ export class TelegramService {
       entry,
       ote,
       terms,
-      stopLoss
+      stopLoss,
+      createdAt: date
     };
 
     this.eventEmitter.emit('telegram.onSignal', signalData);

@@ -20,4 +20,6 @@ export interface BKSignal {
   terms: BKSignalTerms;
 
   stopLoss: number;
+
+  createdAt: number;
 }
