@@ -1,0 +1,18 @@
+invidme-bot-codedeploy
+
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ubuntu/bkiller/BinanceKillerBot
+permissions:
+  - object: /home/ubuntu
+    owner: ubuntu
+    group: ubuntu
+    type:
+      - directory
+      - file
+hooks:
+  ApplicationStart:
+    - location: scripts/reload-pm2.sh
+      runas: ubuntu
