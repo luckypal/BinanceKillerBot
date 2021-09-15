@@ -47,7 +47,8 @@ export class BaseStrategy {
       price: this.getBuyPrice(signal, price),
       lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
       leverage,
-      status: OrderStatus.active
+      status: OrderStatus.active,
+      createdAt: Date.now()
     };
 
     this.logService.log(this.strategyId, `New Buy Order #${id} is created.`, newOrder);
@@ -150,7 +151,8 @@ export class BaseStrategy {
         price: this.getSellPrice(signal),
         stopLoss: this.getStopLoss(signal, targetPrice, leverage, 0),
         lifeTime: -1,
-        status: OrderStatus.active
+        status: OrderStatus.active,
+        createdAt: Date.now()
       };
 
       this.orders[newOrderId] = newOrder;
@@ -191,6 +193,7 @@ export class BaseStrategy {
           order.status = OrderStatus.processed;
         }
 
+        order.closedAt = Date.now();
         this.logService.log(this.strategyId, `Sell Order #${id} is completed.`, order);
       }
     })
@@ -207,6 +210,7 @@ export class BaseStrategy {
 
     orders.forEach(order => {
       order.status = OrderStatus.timeout;
+      order.closedAt = Date.now();
       this.logService.log(this.strategyId, `Buy Order #${order.id} is up to life time.`, order);
     });
   }

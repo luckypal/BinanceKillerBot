@@ -36,9 +36,13 @@ export interface BncOrder {
 
   stopLoss?: number;
 
-  lifeTime: number;
+  lifeTime?: number;
 
   leverage: number;
 
   status: OrderStatus;
+
+  createdAt: number;
+
+  closedAt?: number;
 }
