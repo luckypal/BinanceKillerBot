@@ -37,9 +37,9 @@ export class StrategyService {
   createStrategy() {
     this.strategyProps = [
       [
-        "urgent",
-        "ote",
-        "min"
+        "urgentbuy",
+        "otebuy",
+        "minentrybuy"
       ],
       [
         "shortest",
@@ -66,9 +66,9 @@ export class StrategyService {
     this.strategyKeys.forEach(method => {
       const property: OrderProperty = {};
 
-      if (method.indexOf('urgent') >= 0) property.getBuyPrice = (signal, price) => price;
-      if (method.indexOf('ote') >= 0) property.getBuyPrice = (signal, price) => signal.ote;
-      if (method.indexOf('min') >= 0) property.getBuyPrice = (signal, price) => Math.min(...signal.entry);
+      if (method.indexOf('urgentbuy') >= 0) property.getBuyPrice = (signal, price) => price;
+      if (method.indexOf('otebuy') >= 0) property.getBuyPrice = (signal, price) => signal.ote;
+      if (method.indexOf('minentrybuy') >= 0) property.getBuyPrice = (signal, price) => Math.min(...signal.entry);
 
       if (method.indexOf('shortest') >= 0) property.getSellPrice = (signal) => signal.terms.short[0];
       if (method.indexOf('shortmax') >= 0) property.getSellPrice = (signal) => Math.max(...signal.terms.short);
@@ -149,6 +149,7 @@ export class StrategyService {
   getData() {
     const data = {};
     for (const strategyId in this.strategies) {
+      if (!this.strategies[strategyId]) continue;
       data[strategyId] = this.strategies[strategyId].orders
     }
     return data;
@@ -156,6 +157,7 @@ export class StrategyService {
 
   setData(data: Record<string, Record<number, BncOrder>>) {
     for (const strategyId in data) {
+      if (!this.strategies[strategyId]) continue;
       this.strategies[strategyId].orders = data[strategyId]
     }
   }
