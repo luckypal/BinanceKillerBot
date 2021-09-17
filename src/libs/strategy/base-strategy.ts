@@ -248,7 +248,7 @@ export class BaseStrategy {
         let sellPrice = price;
         if (status == BncOrderStatus.stopLess) sellPrice = stopLoss;
 
-        balances.SPOT += balances[coin] * sellPrice / leverage;
+        balances.SPOT += (balances[coin] * sellPrice) - (buyAmount * (leverage - 1));
         balances.LOAN -= buyAmount * (leverage - 1);
         balances[coin] = 0;
       }
