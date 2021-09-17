@@ -2,7 +2,7 @@ import { BinanceService } from 'src/services/binance/binance.service';
 import { LogService } from 'src/services/log/log.service';
 import { TelegramService } from 'src/services/telegram/telegram.service';
 import { BKSignal } from '../../models/bk-signal';
-import { BncOrder, OrderStatus, OrderType } from '../../models/bnc-order';
+import { BncOrder, BncOrderStatus, BncOrderType } from '../../models/bnc-order';
 
 export interface OrderProperty {
   getLeverage?: (signal: BKSignal) => number;
@@ -43,11 +43,11 @@ export class BaseStrategy {
       id,
       signalId: signalId,
       coin: coin,
-      type: OrderType.buy,
+      type: BncOrderType.buy,
       price: this.getBuyPrice(signal, price),
       lifeTime: Date.now() + this.BUY_ORDER_LIFETIME,
       leverage,
-      status: OrderStatus.active,
+      status: BncOrderStatus.active,
       createdAt: Date.now()
     };
 
@@ -59,15 +59,15 @@ export class BaseStrategy {
     Object.values(this.orders)
       .filter(({ coin, status, type }) =>
         coin == signal.coin
-        && status == OrderStatus.active
-        && type == OrderType.buy)
-      .forEach(order => order.status = OrderStatus.cancelled);
+        && status == BncOrderStatus.active
+        && type == BncOrderType.buy)
+      .forEach(order => order.status = BncOrderStatus.cancelled);
 
     const oldSellOrders = Object.values(this.orders)
       .filter(({ coin, status, type }) =>
         coin == signal.coin
-        && status == OrderStatus.active
-        && type == OrderType.sell)
+        && status == BncOrderStatus.active
+        && type == BncOrderType.sell)
     return !!oldSellOrders.length
   }
 
@@ -120,7 +120,7 @@ export class BaseStrategy {
   }
 
   updateBuyOrders(prices: Record<string, number>) {
-    const orders = Object.values(this.orders).filter(({ status, type }) => status == OrderStatus.active && type == OrderType.buy);
+    const orders = Object.values(this.orders).filter(({ status, type }) => status == BncOrderStatus.active && type == BncOrderType.buy);
     const defId = Date.now();
 
     orders.forEach((order, index) => {
@@ -135,7 +135,7 @@ export class BaseStrategy {
       if (targetPrice < curPrice) return;
 
       // If price is smaller than target price
-      order.status = OrderStatus.processed;
+      order.status = BncOrderStatus.processed;
 
       const {
         signalId,
@@ -147,11 +147,11 @@ export class BaseStrategy {
         ...order,
         id: newOrderId,
         refOrderId: id,
-        type: OrderType.sell,
+        type: BncOrderType.sell,
         price: this.getSellPrice(signal),
         stopLoss: this.getStopLoss(signal, targetPrice, leverage, 0),
         lifeTime: -1,
-        status: OrderStatus.active,
+        status: BncOrderStatus.active,
         createdAt: Date.now()
       };
 
@@ -163,7 +163,7 @@ export class BaseStrategy {
   }
 
   updateSellOrders(prices: Record<string, number>) {
-    const orders = Object.values(this.orders).filter(({ status, type }) => status == OrderStatus.active && type == OrderType.sell);
+    const orders = Object.values(this.orders).filter(({ status, type }) => status == BncOrderStatus.active && type == BncOrderType.sell);
 
     orders.forEach(order => {
       const {
@@ -188,9 +188,9 @@ export class BaseStrategy {
         || newStopLoss > curPrice) {
         // If price is bigger than target price, or price get smaller than stopLoss.
         if (newStopLoss > curPrice) {
-          order.status = OrderStatus.stopLess;
+          order.status = BncOrderStatus.stopLess;
         } else {
-          order.status = OrderStatus.processed;
+          order.status = BncOrderStatus.processed;
         }
 
         order.closedAt = Date.now();
@@ -203,13 +203,13 @@ export class BaseStrategy {
     const now = Date.now();
     const orders = Object.values(this.orders)
       .filter(({ status, lifeTime, type }) =>
-        status == OrderStatus.active
-        && type == OrderType.buy
+        status == BncOrderStatus.active
+        && type == BncOrderType.buy
         && lifeTime != -1
         && lifeTime < now);
 
     orders.forEach(order => {
-      order.status = OrderStatus.timeout;
+      order.status = BncOrderStatus.timeout;
       order.closedAt = Date.now();
       this.logService.log(this.strategyId, `Buy Order #${order.id} is up to life time.`, order);
     });
@@ -237,18 +237,18 @@ export class BaseStrategy {
       } = order;
       if (!balances[coin]) balances[coin] = 0;
       if (
-        status != OrderStatus.processed
-        && status != OrderStatus.stopLess) return;
+        status != BncOrderStatus.processed
+        && status != BncOrderStatus.stopLess) return;
 
-      if (type == OrderType.buy) {
+      if (type == BncOrderType.buy) {
         balances.SPOT -= buyAmount;
         balances.LOAN += buyAmount * (leverage - 1);
         balances[coin] += buyAmount * leverage / price;
       } else {
         let sellPrice = price;
-        if (status == OrderStatus.stopLess) sellPrice = stopLoss;
+        if (status == BncOrderStatus.stopLess) sellPrice = stopLoss;
 
-        balances.SPOT += balances[coin] * sellPrice;
+        balances.SPOT += balances[coin] * sellPrice / leverage;
         balances.LOAN -= buyAmount * (leverage - 1);
         balances[coin] = 0;
       }

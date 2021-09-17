@@ -1,11 +1,9 @@
-import { BKSignal } from "./bk-signal";
-
-export enum OrderType {
+export enum BncOrderType {
   buy = 0,
   sell = 1,
 }
 
-export enum OrderStatus {
+export enum BncOrderStatus {
   active = 0,
 
   processed = 1,
@@ -28,7 +26,7 @@ export interface BncOrder {
 
   coin: string;
 
-  type: OrderType;
+  type: BncOrderType;
 
   price: number;
 
@@ -40,7 +38,7 @@ export interface BncOrder {
 
   leverage: number;
 
-  status: OrderStatus;
+  status: BncOrderStatus;
 
   createdAt: number;
 
