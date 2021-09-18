@@ -72,8 +72,8 @@ export class AppController {
 
   @Get('balances')
   getBalances() {
-    const total = 10000;
-    const buyOnce = 1000;
+    const total = 6000;
+    const buyOnce = 2000;
     const data = this.strategyService.getBalances(total, buyOnce);
     return this.jsonBeautify(data);
   }
