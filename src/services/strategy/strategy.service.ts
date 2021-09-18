@@ -103,8 +103,7 @@ export class StrategyService {
     ]
     const points = [
       signal.stopLoss,
-      signal.stopLoss,
-      entryStop,
+      terms[0],
       ...terms
     ];
     for (let i = 2; i < points.length; i++) {
