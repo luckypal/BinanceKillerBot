@@ -45,9 +45,12 @@ export class AppController {
   @HttpCode(201)
   @Header('Content-Type', '	text/html')
   getStatistics(@Res() res) {
-    if (!fs.existsSync(this.logService.filePath)) return 'No logs';
+    const { filePath } = this.logService;
+    if (!fs.existsSync(filePath)) {
+      fs.appendFileSync(filePath, '', { encoding: 'utf8' });
+    }
 
-    const stream = fs.createReadStream(this.logService.filePath);
+    const stream = fs.createReadStream(filePath);
     stream.pipe(res);
   }
 
