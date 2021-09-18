@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import * as fs from 'fs';
+import { Controller, Get, Header, HttpCode, Param, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
@@ -41,8 +42,13 @@ export class AppController {
   }
 
   @Get('logs')
-  getStatistics() {
-    return this.jsonBeautify(this.logService.logs);
+  @HttpCode(201)
+  @Header('Content-Type', '	text/html')
+  getStatistics(@Res() res) {
+    if (!fs.existsSync(this.logService.filePath)) return 'No logs';
+
+    const stream = fs.createReadStream(this.logService.filePath);
+    stream.pipe(res);
   }
 
   @Get('signals')

@@ -16,9 +16,9 @@ export enum BncOrderStatus {
 }
 
 export interface BncOrder {
-  id: number;
+  id: string;
 
-  refOrderId?: number;
+  refOrderId?: string;
 
   signalId: number;
 

@@ -1,3 +1,4 @@
+import * as cuid from 'cuid';
 import { BinanceService } from 'src/services/binance/binance.service';
 import { LogService } from 'src/services/log/log.service';
 import { TelegramService } from 'src/services/telegram/telegram.service';
@@ -31,7 +32,7 @@ export class BaseStrategy {
     const hasSameOrder = this.cancelOldSameOrders(signal);
     if (hasSameOrder) return;
 
-    const id = Date.now()
+    const id = cuid();
     const { prices } = this.binanceService
     const {
       signalId,
@@ -121,7 +122,6 @@ export class BaseStrategy {
 
   updateBuyOrders(prices: Record<string, number>) {
     const orders = Object.values(this.orders).filter(({ status, type }) => status == BncOrderStatus.active && type == BncOrderType.buy);
-    const defId = Date.now();
 
     orders.forEach((order, index) => {
       const {
@@ -142,7 +142,7 @@ export class BaseStrategy {
         leverage
       } = order;
       const signal = this.telegramService.signals[signalId];
-      const newOrderId = defId + index;
+      const newOrderId = cuid();
       const newOrder: BncOrder = {
         ...order,
         id: newOrderId,

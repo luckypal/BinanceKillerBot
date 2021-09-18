@@ -68,4 +68,6 @@ export class AppEnvironment {
   @Transform(({ value }) => Number.parseInt(value, 10))
   @IsNumber()
   readonly bncUpdateInterval = 10;
+
+  readonly logFileDir = './data'
 }
