@@ -61,7 +61,6 @@ export class StrategyService {
     ];
 
     this.strategyKeys = this.combineProps('', 0);
-    console.log(this.strategyKeys);
 
     this.strategyKeys.forEach(method => {
       const property: OrderProperty = {};

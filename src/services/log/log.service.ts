@@ -21,7 +21,6 @@ export class LogService {
 
   log(...msg) {
     const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
-    console.log(date, ...msg);
 
     const messages = msg.map(value => {
       if (typeof value === 'string') return value;

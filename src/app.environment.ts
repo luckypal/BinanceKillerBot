@@ -61,7 +61,7 @@ export class AppEnvironment {
   @Env('BINANCE_API_KEY')
   readonly bncApiKey = '';
 
-  @Env('BINANCE_SECRET_KEY')
+  @Env('BINANCE_SEC_KEY')
   readonly bncSecKey = '';
 
   @Env('BINANCE_UPDATE_INTERVAL')

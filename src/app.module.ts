@@ -9,6 +9,7 @@ import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
 import { StrategyService } from './services/strategy/strategy.service';
+import { BotService } from './services/bot/bot.service';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { StrategyService } from './services/strategy/strategy.service';
     BinanceService,
     LogService,
     StorageService,
-    StrategyService
+    StrategyService,
+    BotService
   ],
 })
 export class AppModule { }

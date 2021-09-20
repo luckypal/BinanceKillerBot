@@ -1,10 +1,11 @@
+import moment from 'moment';
 import { Injectable } from '@nestjs/common';
 import * as MTProto from '@mtproto/core';
 import * as prompts from 'prompts';
+import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
 import { BKSignal, BKSignalTerms } from '../../models/bk-signal';
 import { LogService } from '../log/log.service';
-import { EventEmitter2 } from 'eventemitter2';
 
 @Injectable()
 export class TelegramService {
@@ -165,7 +166,6 @@ export class TelegramService {
 
       if (newChannelMessages.length == 0) return;
       const message = newChannelMessages[0];
-      // console.log('TG UPDATES', message);
       if (!message) return;
 
       const { peer_id: { channel_id = 0 } = {} } = message;
@@ -173,6 +173,9 @@ export class TelegramService {
 
       try {
         this.processMessage(message);
+
+        const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
+        console.log(date, message);
       } catch (e) {
         this.logService.log('PROCESSING MESSAGE ERROR', e);
       }
@@ -225,7 +228,7 @@ export class TelegramService {
    * @param {String} lines 
    * @returns 
    */
-  parseEntry(lines) {
+  parseEntry(lines): number[] {
     const value = this.findLine(lines, 'ENTRY:');
     if (!value) throw 'ENTRY NOT FOUND';
     const values = value.split('-');
@@ -273,9 +276,12 @@ export class TelegramService {
     const signalId = this.parseSignalId(msgLines[0]);
     const { coin, leverage } = this.parseCoin(msgLines[1]);
     const entry = this.parseEntry(msgLines);
-    const ote = this.parseOTE(msgLines);
+    let ote = this.parseOTE(msgLines);
     const terms = this.parseTerms(msgLines);
     const stopLoss = this.parseStopLoss(msgLines);
+
+    const avrEntry = entry.reduce((partial_sum, a) => partial_sum + a, 0) / entry.length;
+    ote = Math.min(ote, avrEntry);
 
     const signalData: BKSignal = {
       signalId,
