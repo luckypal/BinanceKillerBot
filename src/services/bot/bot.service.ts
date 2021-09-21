@@ -5,6 +5,7 @@ import { MarginOcoOrder, Order, OrderSide, OrderStatus, OrderStatus_LT } from 'b
 import { BKSignal } from 'src/models/bk-signal';
 import { BncOrder, BncOrderStatus, BncOrderType } from 'src/models/bnc-order';
 import { BinanceService } from '../binance/binance.service';
+import { LogService } from '../log/log.service';
 import { TelegramService } from '../telegram/telegram.service';
 
 interface BotOrder {
@@ -24,7 +25,8 @@ export class BotService {
 
   constructor(
     private readonly binanceService: BinanceService,
-    private readonly telegramService: TelegramService
+    private readonly telegramService: TelegramService,
+    private readonly logService: LogService
   ) { }
 
   // startTest() {
@@ -49,39 +51,49 @@ export class BotService {
 
   @OnEvent('telegram.onSignal')
   async onNewSignal(signal: BKSignal) {
-    console.log('NEW SIGNAL', signal);
+    this.logService.blog('NEW SIGNAL', signal);
     if (signal.entry[0] != Math.min(...signal.entry)) return;
     const leverage = Math.max(...signal.leverage);
     if (leverage <= 1) return;
 
-    await this.buy(signal);
+    try {
+      await this.buy(signal);
+    } catch (e) {
+      this.logService.blog('ERROR', e);
+    }
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   watchOrders() {
     this.orders.forEach(async (order) => {
-      if (order.status != OrderStatus.NEW) return;
+      try {
+        if (order.status != OrderStatus.NEW) return;
 
-      const {
-        symbol,
-        orderId,
-        side
-      } = order
-      const bnOrder = await this.binanceService.getOrder(symbol, orderId, true);
-      if (bnOrder.status == OrderStatus.NEW) return;
+        const {
+          symbol,
+          orderId,
+          side
+        } = order
+        const bnOrder = await this.binanceService.getOrder(symbol, orderId, true);
+        if (bnOrder.status == OrderStatus.NEW) return;
 
-      console.log(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
+        this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
+        order.order.closedAt = Date.now();
 
-      if (side == OrderSide.BUY) this.sell(order);
-      else this.refundToSpot(order);
+        if (side == OrderSide.BUY) this.sell(order);
+        else this.refundToSpot(order);
+      } catch (e) {
+        this.logService.blog('ERROR', e);
+      }
     });
   }
 
   async amountToUse() {
     const totalAmount = await this.binanceService.getUsdtBalance();
     // const amountToUse = Math.floor(totalAmount / 2);
-    return 10;
     // return amountToUse;
+    if (totalAmount > 10) return 10;
+    else throw 'NOT enough balance';
   }
 
   async buy(signal: BKSignal): Promise<BotOrder> {
@@ -92,6 +104,7 @@ export class BotService {
     } = signal;
     const amountToUse = await this.amountToUse();
     const amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse);
+    this.logService.blog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse}`);
 
     const buyOrder: BncOrder = {
       id: '',
@@ -117,7 +130,7 @@ export class BotService {
       order: buyOrder
     };
     this.orders.push(botOrder);
-    console.log(`Buy ORDER ${symbol}#${orderId} is created.`);
+    this.logService.blog(`Buy ORDER ${symbol}#${orderId} is created.`, amountToBuy);
     return botOrder;
   }
 
@@ -160,7 +173,7 @@ export class BotService {
       order: sellOrder
     };
     this.orders.push(botOrder);
-    console.log(`SELL ORDER ${symbol}#${orderId} is created.`);
+    this.logService.blog(`SELL ORDER ${symbol}#${orderId} is created.`, amountToSell);
     return botOrder;
   }
 
@@ -172,10 +185,12 @@ export class BotService {
     return Math.min(...signal.entry);
   }
 
-  refundToSpot(sellOrder: BotOrder) {
+  async refundToSpot(sellOrder: BotOrder) {
     const {
+      signalId,
       symbol
     } = sellOrder;
-    this.binanceService.transferMarginToSpot(symbol);
+    const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol);
+    this.logService.blog(`MARGIN2SPOT ${symbol}#${signalId} $${amountToTransfer}`);
   }
 }

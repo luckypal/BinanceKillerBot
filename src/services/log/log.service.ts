@@ -11,12 +11,14 @@ export interface Log {
 @Injectable()
 export class LogService {
   filePath = '';
+  bFilePath = '';
 
   constructor(
     private readonly appEnvironment: AppEnvironment
   ) {
     const { logFileDir } = this.appEnvironment;
     this.filePath = `${logFileDir}/logs.txt`;
+    this.bFilePath = `${logFileDir}/bot_logs.txt`;
   }
 
   log(...msg) {
@@ -28,5 +30,16 @@ export class LogService {
     }).join('  |  ');
     const data = `${date}  ${messages}\n`;
     fs.appendFileSync(this.filePath, data, { encoding: 'utf8' });
+  }
+
+  blog(...msg) {
+    const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
+
+    const messages = msg.map(value => {
+      if (typeof value === 'string') return value;
+      if (typeof value === 'object') return JSON.stringify(value);
+    }).join('  |  ');
+    const data = `${date}  ${messages}\n`;
+    fs.appendFileSync(this.bFilePath, data, { encoding: 'utf8' });
   }
 }

@@ -221,6 +221,12 @@ export class TelegramService {
     return null;
   }
 
+  parseDirection(lines): string {
+    const value = this.findLine(lines, 'Direction:');
+    if (!value) throw 'Direction NOT FOUND';
+    return value;
+  }
+
   /**
    * Parse Entry
    * sample input: ENTRY: 81 - 84.5
@@ -275,6 +281,7 @@ export class TelegramService {
 
     const signalId = this.parseSignalId(msgLines[0]);
     const { coin, leverage } = this.parseCoin(msgLines[1]);
+    const direction = this.parseDirection(msgLines);
     const entry = this.parseEntry(msgLines);
     let ote = this.parseOTE(msgLines);
     const terms = this.parseTerms(msgLines);
@@ -286,6 +293,7 @@ export class TelegramService {
     const signalData: BKSignal = {
       signalId,
       coin,
+      direction,
       leverage,
       entry,
       ote,

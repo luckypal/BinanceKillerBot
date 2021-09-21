@@ -24,19 +24,20 @@ export class BinanceService {
       apiKey: this.appEnvironment.bncApiKey,
       apiSecret: this.appEnvironment.bncSecKey,
     });
+    this.updatePrice();
     this.updateLotSizes();
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async updatePrice() {
-    this.start();
+    if (!this.binance) return;
     this.prices = await this.binance.prices();
     this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
   }
 
   @Cron(CronExpression.EVERY_HOUR)
   async updateLotSizes() {
-    this.start();
+    if (!this.binance) return;
     this.lotSizes = await this.getLotSizes();
   }
 
@@ -126,7 +127,7 @@ export class BinanceService {
       transFrom: 'ISOLATED_MARGIN',
     });
 
-    return true;
+    return amountToTransfer;
   }
 
   async getOrder(

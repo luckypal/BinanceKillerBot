@@ -6,6 +6,7 @@ import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
 import { StrategyService } from './services/strategy/strategy.service';
 import { TelegramService } from './services/telegram/telegram.service';
+import { BotService } from './services/bot/bot.service';
 
 @Controller()
 export class AppController {
@@ -15,7 +16,8 @@ export class AppController {
     private readonly telegramService: TelegramService,
     private readonly logService: LogService,
     private readonly storageService: StorageService,
-    private readonly strategyService: StrategyService
+    private readonly strategyService: StrategyService,
+    private readonly botService: BotService
   ) {
     setTimeout(() => this.startController(), 1000);
   }
@@ -44,8 +46,21 @@ export class AppController {
   @Get('logs')
   @HttpCode(201)
   @Header('Content-Type', '	text/html')
-  getStatistics(@Res() res) {
+  getLogs(@Res() res) {
     const { filePath } = this.logService;
+    if (!fs.existsSync(filePath)) {
+      fs.appendFileSync(filePath, '', { encoding: 'utf8' });
+    }
+
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+  }
+
+  @Get('blogs')
+  @HttpCode(201)
+  @Header('Content-Type', '	text/html')
+  getBotLogs(@Res() res) {
+    const { bFilePath: filePath } = this.logService;
     if (!fs.existsSync(filePath)) {
       fs.appendFileSync(filePath, '', { encoding: 'utf8' });
     }
@@ -68,6 +83,11 @@ export class AppController {
   getOrders() {
     const data = this.strategyService.getData()
     return this.jsonBeautify(data);
+  }
+
+  @Get('borders')
+  getBotOrders() {
+    return this.jsonBeautify(this.botService.orders);
   }
 
   @Get('balances')
