@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EnvironmentModule } from '@nestjs-steroids/environment';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TelegramService } from './services/telegram/telegram.service';
@@ -18,7 +19,8 @@ import { BotService } from './services/bot/bot.service';
       loadEnvFile: true,
       useClass: AppEnvironment,
     }),
-    EventEmitterModule.forRoot()
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot()
   ],
   controllers: [AppController],
   providers: [
