@@ -90,20 +90,32 @@ export class BinanceService {
   async transferSpotToMargin(
     symbol: string,
     amount: number,
+    retry: number
   ) {
     const balance = await this.getUsdtBalance();
     if (balance < amount) return 0;
 
-    await sleep(500);
-    await this.binance.marginIsolatedTransfer({
-      symbol,
-      amount,
-      asset: 'USDT',
-      transFrom: 'SPOT',
-      transTo: 'ISOLATED_MARGIN',
-    });
+    try {
+      await this.binance.marginCreateIsolated({
+        base: symbol.replace('USDT', ''),
+        quote: 'USDT',
+      });
+    } catch (e) {}
 
-    await sleep(500);
+    try {
+      await this.binance.marginIsolatedTransfer({
+        symbol,
+        amount,
+        asset: 'USDT',
+        transFrom: 'SPOT',
+        transTo: 'ISOLATED_MARGIN',
+      });
+    } catch (e) {
+      await sleep(1000);
+      if (retry == 0) throw e;
+      return this.transferSpotToMargin(symbol, amount, retry - 1);
+    }
+
     const { free } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
     const { amount: maxBorrow } = await this.binance.marginMaxBorrow({ asset: 'USDT', isolatedSymbol: symbol });
     return parseFloat(free) + parseFloat(maxBorrow);
@@ -123,7 +135,6 @@ export class BinanceService {
     } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
     const amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
 
-    await sleep(500);
     await this.binance.marginIsolatedTransfer({
       symbol,
       amount: amountToTransfer,

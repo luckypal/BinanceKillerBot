@@ -27,41 +27,43 @@ export class BotService {
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
     private readonly logService: LogService
-  ) { }
+  ) {
+    // setTimeout(() => this.startTest(), 10000);
+  }
 
   // async startTest() {
   //   const signal: BKSignal = {
-  //     "signalId": 438,
-  //     "coin": "LTCUSDT",
+  //     "signalId": 439,
+  //     "coin": "DOTUSDT",
   //     "direction": "LONG📈",
   //     "leverage": [
   //       3,
   //       5
   //     ],
   //     "entry": [
-  //       150,
-  //       158
+  //       26,
+  //       27.05
   //     ],
-  //     "ote": 154,
+  //     "ote": 26.46,
   //     "terms": {
   //       "short": [
-  //         160,
-  //         163,
-  //         166,
-  //         170,
-  //         174
+  //         27.4,
+  //         27.9,
+  //         28.5,
+  //         29.4,
+  //         30.5
   //       ],
   //       "mid": [
-  //         180,
-  //         195,
-  //         215,
-  //         250,
-  //         310
+  //         32,
+  //         34,
+  //         37,
+  //         41,
+  //         48
   //       ],
   //       "long": []
   //     },
-  //     "stopLoss": 138.7,
-  //     "createdAt": 1632237347
+  //     "stopLoss": 23.9,
+  //     "createdAt": 1632261411
   //   };
 
   //   this.onNewSignal(signal);
@@ -122,7 +124,7 @@ export class BotService {
       leverage
     } = signal;
     const amountToUse = await this.amountToUse();
-    const amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse);
+    const amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
     if (amountToBuy == 0) {
       this.logService.blog(`Not able to transfer from Spot to Margin because of balance short ${amountToUse}`);
       return;
