@@ -4,6 +4,7 @@ import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
 import { BncOrder, BncOrderType } from 'src/models/bnc-order';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { sleep } from 'src/utils';
 
 @Injectable()
 export class BinanceService {
@@ -93,6 +94,7 @@ export class BinanceService {
     const balance = await this.getUsdtBalance();
     if (balance < amount) return 0;
 
+    await sleep(500);
     await this.binance.marginIsolatedTransfer({
       symbol,
       amount,
@@ -101,6 +103,7 @@ export class BinanceService {
       transTo: 'ISOLATED_MARGIN',
     });
 
+    await sleep(500);
     const { free } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
     const { amount: maxBorrow } = await this.binance.marginMaxBorrow({ asset: 'USDT', isolatedSymbol: symbol });
     return parseFloat(free) + parseFloat(maxBorrow);
@@ -119,6 +122,8 @@ export class BinanceService {
       interest
     } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
     const amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
+
+    await sleep(500);
     await this.binance.marginIsolatedTransfer({
       symbol,
       amount: amountToTransfer,

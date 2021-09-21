@@ -29,23 +29,41 @@ export class BotService {
     private readonly logService: LogService
   ) { }
 
-  // startTest() {
-  //   console.log('START');
+  // async startTest() {
   //   const signal: BKSignal = {
-  //     signalId: 123,
-  //     coin: 'AUDIOUSDT',
-  //     entry: [2.1, 2.3],
-  //     ote: 2.2,
-  //     leverage: [1, 3],
-  //     stopLoss: 2.1,
-  //     terms: {
-  //       short: [2.4, 2.5, 2.6],
-  //       mid: [],
-  //       long: []
+  //     "signalId": 438,
+  //     "coin": "LTCUSDT",
+  //     "direction": "LONG📈",
+  //     "leverage": [
+  //       3,
+  //       5
+  //     ],
+  //     "entry": [
+  //       150,
+  //       158
+  //     ],
+  //     "ote": 154,
+  //     "terms": {
+  //       "short": [
+  //         160,
+  //         163,
+  //         166,
+  //         170,
+  //         174
+  //       ],
+  //       "mid": [
+  //         180,
+  //         195,
+  //         215,
+  //         250,
+  //         310
+  //       ],
+  //       "long": []
   //     },
-  //     createdAt: Date.now()
+  //     "stopLoss": 138.7,
+  //     "createdAt": 1632237347
   //   };
-  //   this.telegramService.signals[123] = signal;
+
   //   this.onNewSignal(signal);
   // }
 
@@ -78,6 +96,7 @@ export class BotService {
         if (bnOrder.status == OrderStatus.NEW) return;
 
         this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
+        order.status = bnOrder.status;
         order.order.closedAt = Date.now();
 
         if (side == OrderSide.BUY) this.sell(order);
@@ -104,6 +123,10 @@ export class BotService {
     } = signal;
     const amountToUse = await this.amountToUse();
     const amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse);
+    if (amountToBuy == 0) {
+      this.logService.blog(`Not able to transfer from Spot to Margin because of balance short ${amountToUse}`);
+      return;
+    }
     this.logService.blog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse}`);
 
     const buyOrder: BncOrder = {
@@ -124,7 +147,7 @@ export class BotService {
       symbol,
       isIsolated: "TRUE",
       side: OrderSide.BUY,
-      status: order.status,
+      status: OrderStatus.NEW,
 
       signalId,
       order: buyOrder
@@ -160,14 +183,14 @@ export class BotService {
       stopLoss: stopLossPrice,
     };
     const order = (await this.binanceService.makeOrder(sellOrder, true, amountToSell)) as MarginOcoOrder;
-    const { orderId, status } = order.orderReports[0];
+    const { orderId } = order.orderReports[0];
 
     const botOrder: BotOrder = {
       orderId,
       symbol,
       isIsolated: "TRUE",
       side: OrderSide.SELL,
-      status,
+      status: OrderStatus.NEW,
 
       signalId,
       order: sellOrder

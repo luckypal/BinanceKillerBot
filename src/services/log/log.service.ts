@@ -27,6 +27,7 @@ export class LogService {
     const messages = msg.map(value => {
       if (typeof value === 'string') return value;
       if (typeof value === 'object') return JSON.stringify(value);
+      return value;
     }).join('  |  ');
     const data = `${date}  ${messages}\n`;
     fs.appendFileSync(this.filePath, data, { encoding: 'utf8' });
@@ -35,9 +36,12 @@ export class LogService {
   blog(...msg) {
     const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
 
+    console.log(date, ...msg);
+
     const messages = msg.map(value => {
       if (typeof value === 'string') return value;
       if (typeof value === 'object') return JSON.stringify(value);
+      return value;
     }).join('  |  ');
     const data = `${date}  ${messages}\n`;
     fs.appendFileSync(this.bFilePath, data, { encoding: 'utf8' });
