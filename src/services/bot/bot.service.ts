@@ -208,7 +208,8 @@ export class BotService {
   }
 
   getStopLossPrice(signal: BKSignal) {
-    return Math.min(...signal.entry) * 0.99;
+    // return Math.min(...signal.entry) * 0.99;
+    return signal.stopLoss
   }
 
   async refundToSpot(sellOrder: BotOrder) {
