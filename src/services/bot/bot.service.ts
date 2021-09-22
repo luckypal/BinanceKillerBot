@@ -111,10 +111,10 @@ export class BotService {
 
   async amountToUse() {
     const totalAmount = await this.binanceService.getUsdtBalance();
-    // const amountToUse = Math.floor(totalAmount / 2);
-    // return amountToUse;
-    if (totalAmount > 10) return 10;
-    else throw 'NOT enough balance';
+    const amountToUse = Math.floor(totalAmount / 2);
+    return amountToUse;
+    // if (totalAmount > 10) return 10;
+    // else throw 'NOT enough balance';
   }
 
   async buy(signal: BKSignal): Promise<BotOrder> {
@@ -169,8 +169,7 @@ export class BotService {
       leverage,
     } = signal;
     const sellPrice = this.getSellPrice(signal);
-    let stopLossPrice = this.getStopLossPrice(signal);
-    stopLossPrice = parseFloat(this.binanceService.calculateQuantity(symbol, stopLossPrice, 1));
+    const stopLossPrice = this.getStopLossPrice(signal);
 
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
