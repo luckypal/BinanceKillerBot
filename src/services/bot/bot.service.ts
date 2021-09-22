@@ -169,7 +169,8 @@ export class BotService {
       leverage,
     } = signal;
     const sellPrice = this.getSellPrice(signal);
-    const stopLossPrice = this.getStopLossPrice(signal);
+    let stopLossPrice = this.getStopLossPrice(signal);
+    stopLossPrice = parseFloat(this.binanceService.calculateQuantity(symbol, stopLossPrice, 1));
 
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
@@ -207,7 +208,7 @@ export class BotService {
   }
 
   getStopLossPrice(signal: BKSignal) {
-    return Math.min(...signal.entry);
+    return Math.min(...signal.entry) * 0.99;
   }
 
   async refundToSpot(sellOrder: BotOrder) {
