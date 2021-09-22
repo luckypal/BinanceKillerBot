@@ -100,7 +100,9 @@ export class BinanceService {
         base: symbol.replace('USDT', ''),
         quote: 'USDT',
       });
-    } catch (e) {}
+    } catch (e) {
+      console.log('marginCreateIsolated', e);
+    }
 
     try {
       await this.binance.marginIsolatedTransfer({
@@ -111,7 +113,8 @@ export class BinanceService {
         transTo: 'ISOLATED_MARGIN',
       });
     } catch (e) {
-      await sleep(1000);
+      console.log('marginIsolatedTransfer', retry, e);
+      await sleep(500);
       if (retry == 0) throw e;
       return this.transferSpotToMargin(symbol, amount, retry - 1);
     }
