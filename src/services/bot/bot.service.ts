@@ -203,11 +203,16 @@ export class BotService {
   }
 
   getSellPrice(signal: BKSignal) {
-    return Math.min(...signal.terms.short, ...signal.terms.mid);
+    const { dailyChangePercent } = this.binanceService;
+    if (dailyChangePercent < 0)
+      return Math.min(...signal.terms.short, ...signal.terms.mid);
+    return signal.terms.short[1];
   }
 
   getStopLossPrice(signal: BKSignal) {
-    // return Math.min(...signal.entry) * 0.99;
+    const { dailyChangePercent } = this.binanceService;
+    if (dailyChangePercent < 0)
+      return Math.min(...signal.entry);
     return signal.stopLoss
   }
 

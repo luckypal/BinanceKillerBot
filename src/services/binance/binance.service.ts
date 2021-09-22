@@ -1,4 +1,4 @@
-import BinanceApi, { Binance, OrderSide, OrderStatus, OrderType, SideEffectType } from 'binance-api-node'
+import BinanceApi, { Binance, DailyStatsResult, OrderSide, OrderStatus, OrderType, SideEffectType } from 'binance-api-node'
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
@@ -11,6 +11,7 @@ import { LogService } from '../log/log.service';
 export class BinanceService {
   binance: Binance = null;
   lotSizes: Record<string, number> = {};
+  dailyChangePercent: number;
 
   public prices = {};
 
@@ -35,6 +36,8 @@ export class BinanceService {
   async updatePrice() {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
+    const dailyStats = (await this.binance.dailyStats({ symbol: 'BTCUSDT' })) as DailyStatsResult;
+    this.dailyChangePercent = parseFloat(dailyStats.priceChangePercent);
     this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
   }
 
