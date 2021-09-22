@@ -5,6 +5,7 @@ import { AppEnvironment } from 'src/app.environment';
 import { BncOrder, BncOrderType } from 'src/models/bnc-order';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from 'src/utils';
+import { LogService } from '../log/log.service';
 
 @Injectable()
 export class BinanceService {
@@ -15,7 +16,8 @@ export class BinanceService {
 
   constructor(
     private readonly appEnvironment: AppEnvironment,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private logService: LogService
   ) { }
 
   async start() {
@@ -92,16 +94,18 @@ export class BinanceService {
     amount: number,
     retry: number
   ) {
-    const balance = await this.getUsdtBalance();
-    if (balance < amount) return 0;
+    // const balance = await this.getUsdtBalance();
+    // if (balance < amount) return 0;
 
-    try {
-      await this.binance.marginCreateIsolated({
-        base: symbol.replace('USDT', ''),
-        quote: 'USDT',
-      });
-    } catch (e) {
-      console.log('marginCreateIsolated', e);
+    if (retry == 3) {
+      try {
+        await this.binance.marginCreateIsolated({
+          base: symbol.replace('USDT', ''),
+          quote: 'USDT',
+        });
+      } catch (e) {
+        this.logService.blog('marginCreateIsolated', e);
+      }
     }
 
     try {
@@ -113,7 +117,7 @@ export class BinanceService {
         transTo: 'ISOLATED_MARGIN',
       });
     } catch (e) {
-      console.log('marginIsolatedTransfer', retry, e);
+      this.logService.blog('marginIsolatedTransfer', retry, e);
       await sleep(500);
       if (retry == 0) throw e;
       return this.transferSpotToMargin(symbol, amount, retry - 1);
