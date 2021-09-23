@@ -98,7 +98,9 @@ export class BotService {
           side
         } = order
         const bnOrder = await this.binanceService.getOrder(symbol, orderId, true);
-        if (!bnOrder || bnOrder.status == OrderStatus.NEW) return;
+        if (!bnOrder) return;
+        if (bnOrder.status == OrderStatus.NEW
+          || bnOrder.status == OrderStatus.PARTIALLY_FILLED) return;
 
         this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
         order.status = bnOrder.status;
