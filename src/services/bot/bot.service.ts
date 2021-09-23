@@ -72,7 +72,10 @@ export class BotService {
   @OnEvent('telegram.onSignal')
   async onNewSignal(signal: BKSignal) {
     this.logService.blog('NEW SIGNAL', signal);
-    if (signal.entry[0] != Math.min(...signal.entry)) return;
+    if (signal.terms.short[0] != Math.min(...signal.terms.short)) {
+      this.logService.blog('Falling with margin is not supported yet.');
+      return;
+    }
     const leverage = Math.max(...signal.leverage);
     if (leverage <= 1) return;
 
@@ -95,7 +98,7 @@ export class BotService {
           side
         } = order
         const bnOrder = await this.binanceService.getOrder(symbol, orderId, true);
-        if (bnOrder.status == OrderStatus.NEW) return;
+        if (!bnOrder || bnOrder.status == OrderStatus.NEW) return;
 
         this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
         order.status = bnOrder.status;

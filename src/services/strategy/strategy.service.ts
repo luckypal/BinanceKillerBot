@@ -114,7 +114,7 @@ export class StrategyService {
 
   @OnEvent('telegram.onSignal')
   onNewSignal(signal: BKSignal) {
-    if (signal.entry[0] != Math.min(...signal.entry)) {
+    if (signal.terms.short[0] != Math.min(...signal.terms.short)) {
       this.logService.log('Falling with margin is not supported yet.');
       return;
     }
