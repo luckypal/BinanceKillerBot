@@ -162,6 +162,7 @@ export class TelegramService {
   startListener = () => {
     console.log('[+] starting listener')
     this.mtproto.updates.on('updates', ({ updates }) => {
+      this.logService.mlog(updates);
       const newChannelMessages = updates.filter((update) => update._ === 'updateNewChannelMessage').map(({ message }) => message) // filter `updateNewChannelMessage` types only and extract the 'message' object
 
       if (newChannelMessages.length == 0) return;

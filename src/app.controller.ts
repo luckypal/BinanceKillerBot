@@ -48,12 +48,7 @@ export class AppController {
   @Header('Content-Type', '	text/html')
   getLogs(@Res() res) {
     const { filePath } = this.logService;
-    if (!fs.existsSync(filePath)) {
-      fs.appendFileSync(filePath, '', { encoding: 'utf8' });
-    }
-
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
+    this.logService.streamLog(filePath, res);
   }
 
   @Get('blogs')
@@ -61,12 +56,15 @@ export class AppController {
   @Header('Content-Type', '	text/html')
   getBotLogs(@Res() res) {
     const { bFilePath: filePath } = this.logService;
-    if (!fs.existsSync(filePath)) {
-      fs.appendFileSync(filePath, '', { encoding: 'utf8' });
-    }
+    this.logService.streamLog(filePath, res);
+  }
 
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
+  @Get('mlogs')
+  @HttpCode(201)
+  @Header('Content-Type', '	text/html')
+  getMessageLogs(@Res() res) {
+    const { mFilePath: filePath } = this.logService;
+    this.logService.streamLog(filePath, res);
   }
 
   @Get('signals')
