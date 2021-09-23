@@ -160,7 +160,7 @@ export class BotService {
       order: buyOrder
     };
     this.orders.push(botOrder);
-    this.logService.blog(`Buy ORDER ${symbol}#${orderId} is created.`, amountToBuy);
+    this.logService.blog(`Buy ORDER ${symbol}#${orderId} is created.`, amountToBuy, order);
     return botOrder;
   }
 
@@ -203,7 +203,7 @@ export class BotService {
       order: sellOrder
     };
     this.orders.push(botOrder);
-    this.logService.blog(`SELL ORDER ${symbol}#${orderId} is created.`, amountToSell);
+    this.logService.blog(`SELL ORDER ${symbol}#${orderId} is created.`, amountToSell, order);
     return botOrder;
   }
 
