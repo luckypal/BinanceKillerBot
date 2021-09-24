@@ -157,20 +157,44 @@ export class BinanceService {
   async transferMarginToSpot(
     symbol: string,
   ) {
-    const {
+    const isolatedAccount = await this.binance.marginIsolatedAccount({ symbols: symbol });
+    let {
+      asset,
       netAsset,
       borrowed,
       interest
-    } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
-    const amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
+    } = isolatedAccount.assets[0].quoteAsset;
+    let amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
 
-    await this.binance.marginIsolatedTransfer({
-      symbol,
-      amount: amountToTransfer,
-      asset: 'USDT',
-      transTo: 'SPOT',
-      transFrom: 'ISOLATED_MARGIN',
-    });
+    if (amountToTransfer) {
+      await this.binance.marginIsolatedTransfer({
+        symbol,
+        amount: amountToTransfer,
+        asset,
+        transTo: 'SPOT',
+        transFrom: 'ISOLATED_MARGIN',
+      });
+    }
+
+    ({
+      asset,
+      netAsset,
+      borrowed,
+      interest
+    } = isolatedAccount.assets[0].baseAsset);
+    amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
+
+    if (amountToTransfer) {
+      await this.binance.marginIsolatedTransfer({
+        symbol,
+        amount: amountToTransfer,
+        asset,
+        transTo: 'SPOT',
+        transFrom: 'ISOLATED_MARGIN',
+      });
+    }
+
+    await this.binance.disableMarginAccount({ symbol });
 
     return amountToTransfer;
   }
