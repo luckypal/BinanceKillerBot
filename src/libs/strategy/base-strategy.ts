@@ -218,6 +218,7 @@ export class BaseStrategy {
   getBalances(
     primaryUsdt: number,
     buyAmount: number,
+    excepts: string[]
   ) {
     const balances = {
       SPOT: primaryUsdt,
@@ -225,6 +226,7 @@ export class BaseStrategy {
     };
     const { prices } = this.binanceService;
     const usdts = {};
+    const amounts = {};
 
     Object.values(this.orders).forEach(order => {
       const {
@@ -235,21 +237,25 @@ export class BaseStrategy {
         type,
         status
       } = order;
+      if (excepts.includes(coin)) return;
       if (!balances[coin]) balances[coin] = 0;
       if (
         status != BncOrderStatus.processed
         && status != BncOrderStatus.stopLess) return;
 
       if (type == BncOrderType.buy) {
-        balances.SPOT -= buyAmount;
-        balances.LOAN += buyAmount * (leverage - 1);
-        balances[coin] += buyAmount * leverage / price;
+        const amount = this.calculateBuyAmount(balances.SPOT, buyAmount);
+        balances.SPOT -= amount;
+        balances.LOAN += amount * (leverage - 1);
+        balances[coin] += amount * leverage / price;
+        amounts[coin] = amount;
       } else {
         let sellPrice = price;
         if (status == BncOrderStatus.stopLess) sellPrice = stopLoss;
 
-        balances.SPOT += (balances[coin] * sellPrice) - (buyAmount * (leverage - 1));
-        balances.LOAN -= buyAmount * (leverage - 1);
+        const amount = amounts[coin];
+        balances.SPOT += (balances[coin] * sellPrice) - (amount * (leverage - 1));
+        balances.LOAN -= amount * (leverage - 1);
         balances[coin] = 0;
       }
     });
@@ -270,6 +276,12 @@ export class BaseStrategy {
       },
       USDT: usdts,
       coins: balances,
+      amounts
     };
+  }
+
+  calculateBuyAmount(balance, amount) {
+    if (amount > 1) return Math.min(balance, amount);
+    return balance * amount;
   }
 }

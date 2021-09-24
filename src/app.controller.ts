@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { Controller, Get, Header, HttpCode, Param, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { BinanceService } from './services/binance/binance.service';
@@ -89,10 +88,33 @@ export class AppController {
   }
 
   @Get('balances')
-  getBalances() {
+  getDefaultBalances(
+  ) {
     const total = 6000;
     const buyOnce = 2000;
-    const data = this.strategyService.getBalances(total, buyOnce);
+    const exceptCoins = [];
+    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
+    return this.jsonBeautify(data);
+  }
+
+  @Get('balances/:total/:buyOnce')
+  getBalances(
+    @Param('total') total: number,
+    @Param('buyOnce') buyOnce: number
+  ) {
+    const exceptCoins = [];
+    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
+    return this.jsonBeautify(data);
+  }
+
+  @Get('balances/:total/:buyOnce/:exceptCoins')
+  getBalancesWithExcepts(
+    @Param('total') total: number,
+    @Param('buyOnce') buyOnce: number,
+    @Param('exceptCoins') _exceptCoins: string
+  ) {
+    const exceptCoins = _exceptCoins.split(',');
+    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
     return this.jsonBeautify(data);
   }
 

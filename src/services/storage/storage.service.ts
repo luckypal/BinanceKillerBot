@@ -60,5 +60,26 @@ export class StorageService {
     this.isLoaded = true;
 
     this.save();
+
+    // this.convert();
   }
+
+  // convert() {
+  //   const { logFileDir } = this.appEnvironment;
+  //   const dataFilePath = `${logFileDir}/tmp_order.json`;
+  //   const str = fs.readFileSync(dataFilePath, { encoding: 'utf8' });
+  //   const data = JSON.parse(str);
+
+  //   for (const stKey in data) {
+  //     console.log(stKey);
+  //     const stData = data[stKey];
+
+  //     for (const orderId in stData) {
+  //       const orderdata = stData[orderId];
+  //       if (orderdata['coin'] == 'XRPUSDT') delete stData[orderId];
+  //     }
+  //   }
+
+  //   this.saveFile(`${logFileDir}/__tmp_order.json`, data);
+  // }
 }
