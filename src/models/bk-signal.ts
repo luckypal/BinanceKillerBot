@@ -6,6 +6,12 @@ export interface BKSignalTerms {
   long: number[];
 }
 
+export interface BNDailyStats {
+  BTCUSDT: number;
+
+  [x: string]: number;
+}
+
 export interface BKSignal {
   signalId: number;
 
@@ -24,4 +30,6 @@ export interface BKSignal {
   stopLoss: number;
 
   createdAt: number;
+
+  dailyStats?: BNDailyStats;
 }

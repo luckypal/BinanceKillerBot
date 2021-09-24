@@ -6,12 +6,13 @@ import { BncOrder, BncOrderType } from 'src/models/bnc-order';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from 'src/utils';
 import { LogService } from '../log/log.service';
+import { BNDailyStats } from 'src/models/bk-signal';
 
 @Injectable()
 export class BinanceService {
   binance: Binance = null;
   lotSizes: Record<string, number> = {};
-  dailyChangePercent: number;
+  dailyStats: DailyStatsResult[] = [];
 
   public prices = {};
 
@@ -36,9 +37,12 @@ export class BinanceService {
   async updatePrice() {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
-    const dailyStats = (await this.binance.dailyStats({ symbol: 'BTCUSDT' })) as DailyStatsResult;
-    this.dailyChangePercent = parseFloat(dailyStats.priceChangePercent);
     this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async updateDailyStats() {
+    this.dailyStats = (await this.binance.dailyStats()) as DailyStatsResult[];
   }
 
   @Cron(CronExpression.EVERY_HOUR)
@@ -59,6 +63,21 @@ export class BinanceService {
       lotSizes[symbol] = parseFloat(minQty);
     });
     return lotSizes;
+  }
+
+  /**
+   * 
+   * @param symbol ex: ETHUSDT
+   * @returns { BTCUSDT: 5, ETHUSDT: 8 }
+   */
+  getDailyStats(symbol: string): BNDailyStats {
+    const btc = this.dailyStats.find(value => value.symbol == 'BTCUSDT');
+    const self = this.dailyStats.find(value => value.symbol == symbol);
+
+    return {
+      BTCUSDT: parseFloat(btc.priceChangePercent),
+      [symbol]: parseFloat(self.priceChangePercent)
+    };
   }
 
   /**

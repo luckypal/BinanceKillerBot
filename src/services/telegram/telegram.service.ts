@@ -6,6 +6,7 @@ import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
 import { BKSignal, BKSignalTerms } from '../../models/bk-signal';
 import { LogService } from '../log/log.service';
+import { BinanceService } from '../binance/binance.service';
 
 @Injectable()
 export class TelegramService {
@@ -17,6 +18,7 @@ export class TelegramService {
   constructor(
     private eventEmitter: EventEmitter2,
     private readonly logService: LogService,
+    private readonly binanceService: BinanceService,
     private readonly appEnvironment: AppEnvironment,
   ) { }
 
@@ -196,10 +198,8 @@ export class TelegramService {
 
   /**
    * Parse coin
-   * sample line: COIN: $FIL/USDT (3-5x)
-   * sample return: { coin: 'FIL/USDT', leverage: [3, 5] }
-   * @param {String} line 
-   * @returns 
+   * @param {String} line ex: COIN: $FIL/USDT (3-5x)
+   * @returns { coin: 'FILUSDT', leverage: [3, 5] }
    */
   parseCoin(line) {
     const msgs = line.split(' ');
@@ -290,6 +290,7 @@ export class TelegramService {
 
     const avrEntry = entry.reduce((partial_sum, a) => partial_sum + a, 0) / entry.length;
     ote = Math.min(ote, avrEntry);
+    const dailyStats = this.binanceService.getDailyStats(coin);
 
     const signalData: BKSignal = {
       signalId,
@@ -300,7 +301,8 @@ export class TelegramService {
       ote,
       terms,
       stopLoss,
-      createdAt: date
+      createdAt: date,
+      dailyStats
     };
 
     this._signals[signalId] = signalData;

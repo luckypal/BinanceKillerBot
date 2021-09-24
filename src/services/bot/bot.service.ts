@@ -76,6 +76,12 @@ export class BotService {
       this.logService.blog('Falling with margin is not supported yet.');
       return;
     }
+
+    if (signal.dailyStats
+      && signal.dailyStats.BTCUSDT < -7) {
+      this.logService.blog(`BTC is falling too much now. Daily state: ${signal.dailyStats.BTCUSDT}`);
+      return;
+    }
     const leverage = Math.max(...signal.leverage);
     if (leverage <= 1) return;
 
