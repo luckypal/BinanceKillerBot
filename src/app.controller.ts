@@ -88,10 +88,9 @@ export class AppController {
   }
 
   @Get('balances')
-  getDefaultBalances(
-  ) {
-    const total = 6000;
-    const buyOnce = 2000;
+  async getDefaultBalances() {
+    const total = await this.binanceService.getUsdtBalance();
+    const buyOnce = 0.5;
     const exceptCoins = [];
     const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
     return this.jsonBeautify(data);
