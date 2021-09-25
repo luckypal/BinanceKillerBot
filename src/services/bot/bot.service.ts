@@ -219,8 +219,11 @@ export class BotService {
     const { signalId, price } = buyBncOrder;
     const signal = this.telegramService.signals[signalId];
     const { coin, terms } = signal;
-    const maxSellPrice = this.binanceService.filterPrice(coin, price * 1.03);
-    return Math.min(maxSellPrice, terms.short[0]);
+    let maxSellPrice = price * 1.03;
+    maxSellPrice = Math.min(maxSellPrice, terms.short[0]);
+    maxSellPrice = maxSellPrice * 0.9999;
+    maxSellPrice = this.binanceService.filterPrice(coin, maxSellPrice);
+    return maxSellPrice;
     // const { dailyChangePercent } = this.binanceService;
     // if (dailyChangePercent < 0)
     //   return Math.min(...signal.terms.short, ...signal.terms.mid);
