@@ -12,6 +12,7 @@ import { BNDailyStats } from 'src/models/bk-signal';
 export class BinanceService {
   binance: Binance = null;
   lotSizes: Record<string, number> = {};
+  priceFilters: Record<string, number> = {};
   dailyStats: DailyStatsResult[] = [];
 
   public prices = {};
@@ -48,7 +49,7 @@ export class BinanceService {
   @Cron(CronExpression.EVERY_HOUR)
   async updateLotSizes() {
     if (!this.binance) return;
-    this.lotSizes = await this.getLotSizes();
+    this.getLotSizes();
   }
 
   async getLotSizes() {
@@ -56,13 +57,14 @@ export class BinanceService {
     const info = exchangeInfo.symbols
       .filter(item => item.symbol.endsWith('USDT'));
 
-    const lotSizes: Record<string, number> = {};
     info.forEach((item) => {
       const { symbol } = item;
       const { minQty } = item.filters.find(filter => filter.filterType === 'LOT_SIZE') as any;
-      lotSizes[symbol] = parseFloat(minQty);
+      this.lotSizes[symbol] = parseFloat(minQty);
+
+      const { minPrice } = item.filters.find(filter => filter.filterType === 'PRICE_FILTER') as any;
+      this.priceFilters[symbol] = parseFloat(minPrice);
     });
-    return lotSizes;
   }
 
   /**
@@ -100,10 +102,22 @@ export class BinanceService {
    */
   calculateQuantity(symbol: string, amount: number, price: number) {
     const lotSize = this.lotSizes[symbol];
+    if (!lotSize) return (amount / price).toString();
+
     const precision = Math.log10(lotSize);
     const num = Math.pow(10, -precision);
     const quantity = Math.floor(amount / price * num) / num;
     return quantity.toString();
+  }
+
+  filterPrice(symbol: string, price: number) {
+    const priceFilter = this.priceFilters[symbol];
+    if (!priceFilter) return price;
+
+    const precision = Math.log10(priceFilter);
+    const num = Math.pow(10, -precision);
+    const newPrice = Math.floor(price * num) / num;
+    return newPrice;
   }
 
   /**
@@ -256,11 +270,11 @@ export class BinanceService {
             type: OrderType.MARKET,
           });
         } else {
-          // const quantity = this.calculateQuantity(coin, amount, price);
+          const quantity = this.calculateQuantity(symbol, amount, price);
           await this.binance.order({
             symbol,
             side: OrderSide.BUY,
-            quantity: amount.toString(),
+            quantity,
             price: sPrice,
             type: OrderType.LIMIT
           });
