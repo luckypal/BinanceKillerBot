@@ -122,6 +122,14 @@ export class AppController {
     return this.storageService.save();
   }
 
+  @Get('remove/:signalId')
+  removeSignal(
+    @Param('signalId') signalId: string
+  ) {
+   this.strategyService.removeSignal(signalId);
+   return 'Success';
+  }
+
   jsonBeautify(data) {
     return JSON.stringify(data, null, 2);
   }

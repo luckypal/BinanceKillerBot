@@ -159,4 +159,14 @@ export class StrategyService {
       this.strategies[strategyId].orders = data[strategyId]
     }
   }
+
+  removeSignal(_signalId) {
+    return Object.values(this.strategies).map(strategy => {
+      const { orders } = strategy;
+      for (const orderId in orders) {
+        const {signalId} = orders[orderId];
+        if (signalId == _signalId) delete orders[orderId];
+      }
+    });
+  }
 }
