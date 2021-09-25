@@ -15,7 +15,7 @@ interface BotOrder {
   side: OrderSide;
   status: OrderStatus_LT;
 
-  signalId: number;
+  signalId: number | string;
   order: BncOrder;
 }
 

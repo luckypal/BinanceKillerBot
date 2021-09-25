@@ -73,6 +73,7 @@ export class BinanceService {
   getDailyStats(symbol: string): BNDailyStats {
     const btc = this.dailyStats.find(value => value.symbol == 'BTCUSDT');
     const self = this.dailyStats.find(value => value.symbol == symbol);
+    if (!btc || !self) return null;
 
     return {
       BTCUSDT: parseFloat(btc.priceChangePercent),

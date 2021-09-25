@@ -50,10 +50,15 @@ export class AppEnvironment {
   @IsNumber()
   readonly tgDcId = 1;
 
-  @Env('TELEGRAM_CHANNEL_ID')
+  @Env('TELEGRAM_CORNIX_ID')
   @Transform(({ value }) => Number.parseInt(value, 10))
   @IsNumber()
-  readonly tgChannelId = 0;
+  readonly tgCornixId = 0;
+
+  @Env('TELEGRAM_VIP_ID')
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNumber()
+  readonly tgVipId = 0;
 
   @Env('PHONE_NUMBER')
   readonly phoneNumber = '';

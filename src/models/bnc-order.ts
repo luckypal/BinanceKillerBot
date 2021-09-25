@@ -20,7 +20,7 @@ export interface BncOrder {
 
   refOrderId?: string;
 
-  signalId: number;
+  signalId: number | string;
 
   // signal: BKSignal;
 

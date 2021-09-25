@@ -13,7 +13,7 @@ export interface BNDailyStats {
 }
 
 export interface BKSignal {
-  signalId: number;
+  signalId: number | string;
 
   coin: string;
 
