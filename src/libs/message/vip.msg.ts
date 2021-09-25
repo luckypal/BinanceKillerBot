@@ -1,6 +1,8 @@
 import { BKSignal, BKSignalTerms } from "src/models/bk-signal";
 
 export class VipMessage {
+  name = 'VIP';
+
   strReplace(str, source, target) {
     source.forEach(src => str = str.replace(src, target));
     return str;

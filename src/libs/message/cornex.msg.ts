@@ -2,6 +2,8 @@ import * as cuid from 'cuid';
 import { BKSignal, BKSignalTerms } from "src/models/bk-signal";
 
 export class CornexMessage {
+  name = 'Cornix';
+
   strReplace(str, source, target) {
     source.forEach(src => str = str.replace(src, target));
     return str;

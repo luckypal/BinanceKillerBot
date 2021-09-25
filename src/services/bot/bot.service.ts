@@ -82,11 +82,11 @@ export class BotService {
       this.logService.blog(`BTC is falling too much now. Daily state: ${signal.dailyStats.BTCUSDT}`);
       return;
     }
-    const leverage = Math.max(...signal.leverage);
-    if (leverage <= 1) return;
+    // const leverage = Math.max(...signal.leverage);
+    // if (leverage <= 1) return;
 
     try {
-      await this.buy(signal);
+      // await this.buy(signal);
     } catch (e) {
       this.logService.blog('ERROR', e);
     }

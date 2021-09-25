@@ -206,7 +206,7 @@ export class TelegramService {
       coin: symbol
     } = signalData;
 
-    this.logService.mlog(signalData);
+    this.logService.mlog(parser.name, this.binanceService.prices[symbol], signalData);
     if (this.lastSymbol == symbol) {
       this.logService.mlog('Duplicated signal');
       return;
