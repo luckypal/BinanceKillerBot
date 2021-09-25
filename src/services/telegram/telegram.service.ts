@@ -8,7 +8,7 @@ import { BKSignal } from '../../models/bk-signal';
 import { LogService } from '../log/log.service';
 import { BinanceService } from '../binance/binance.service';
 import { VipMessage } from 'src/libs/message/vip.msg';
-import { CornexMessage } from 'src/libs/message/cornex.msg';
+import { CornixMessage } from 'src/libs/message/cornix.msg';
 
 @Injectable()
 export class TelegramService {
@@ -16,7 +16,7 @@ export class TelegramService {
   phoneCodeHash: string;
 
   vipMsgParser: VipMessage = new VipMessage();
-  cornexMsgParser: CornexMessage = new CornexMessage();
+  cornixMsgParser: CornixMessage = new CornixMessage();
 
   public _signals: Record<number | string, BKSignal> = {};
   lastSymbol: string = null;
@@ -47,7 +47,7 @@ export class TelegramService {
         },
       })
       .then((result) => {
-        console.log('Telegram GetFull User', result)
+        console.log('Telegram GetFull User', result.user.username)
         this.startListener();
       })
       .catch(error => {
@@ -80,7 +80,7 @@ export class TelegramService {
       //     'This message cannot be forwarded or replicated\n' +
       //     '- Binance Killers®',
       // });
-      // this.processMessage('COIN: $BTC/USDT\nDirection: LONG\nExchange: Binance Futures\nLeverage: 5x\n\nENTRY: 41,180 - 42,221 - 42,900\n\nTARGETS: 43,200 - 43,600 - 44,100 - 44,800 - 45,800 - 47,000 - 49,000 - 52,000 - 55,000 - 59,300 \n\nSTOP LOSS: 39,358', this.cornexMsgParser);
+      // this.processMessage('COIN: $BTC/USDT\nDirection: LONG\nExchange: Binance Futures\nLeverage: 5x\n\nENTRY: 41,180 - 42,221 - 42,900\n\nTARGETS: 43,200 - 43,600 - 44,100 - 44,800 - 45,800 - 47,000 - 49,000 - 52,000 - 55,000 - 59,300 \n\nSTOP LOSS: 39,358', this.cornixMsgParser);
     }
   }
 
@@ -182,14 +182,13 @@ export class TelegramService {
       if (channel_id != tgCornixId
         && channel_id != tgVipId) return;
 
-      this.logService.mlog(updates);
-
       const { reply_to = null, message: msgContent } = message;
+      const parser = channel_id == this.appEnvironment.tgCornixId ? this.cornixMsgParser : this.vipMsgParser;
+      this.logService.mlog(parser.name, msgContent);
       if (reply_to) return;
+
       try {
-        if (channel_id == this.appEnvironment.tgCornixId) this.processMessage(msgContent, this.cornexMsgParser);
-        else if (channel_id == this.appEnvironment.tgVipId) this.processMessage(msgContent, this.vipMsgParser);
-        else return;
+        this.processMessage(msgContent, parser);
 
         const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
         console.log(date, message);
@@ -199,7 +198,7 @@ export class TelegramService {
     });
   }
 
-  processMessage(message: string, parser: VipMessage | CornexMessage) {
+  processMessage(message: string, parser: VipMessage | CornixMessage) {
     const signalData = parser.parse(message);
     const {
       signalId,

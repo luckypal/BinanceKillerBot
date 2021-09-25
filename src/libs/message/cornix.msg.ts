@@ -1,7 +1,7 @@
 import * as cuid from 'cuid';
 import { BKSignal, BKSignalTerms } from "src/models/bk-signal";
 
-export class CornexMessage {
+export class CornixMessage {
   name = 'Cornix';
 
   strReplace(str, source, target) {

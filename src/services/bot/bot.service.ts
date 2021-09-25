@@ -108,9 +108,10 @@ export class BotService {
         if (bnOrder.status == OrderStatus.NEW
           || bnOrder.status == OrderStatus.PARTIALLY_FILLED) return;
 
-        this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
         order.status = bnOrder.status;
+        if (order.side == OrderSide.BUY) order.order.price = parseFloat(bnOrder.price);
         order.order.closedAt = Date.now();
+        this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
 
         if (side == OrderSide.BUY) this.sell(order);
         else this.refundToSpot(order);
@@ -174,12 +175,13 @@ export class BotService {
     const {
       symbol,
       signalId,
+      order: buyBncOrder
     } = buyOrder;
     const signal = this.telegramService.signals[signalId];
     const {
       leverage,
     } = signal;
-    const sellPrice = this.getSellPrice(signal);
+    const sellPrice = this.getSellPrice(buyBncOrder);
     const stopLossPrice = this.getStopLossPrice(signal);
 
     const amountToSell = await this.binanceService.amountToRepay(symbol);
@@ -213,8 +215,12 @@ export class BotService {
     return botOrder;
   }
 
-  getSellPrice(signal: BKSignal) {
-    return signal.terms.short[0];
+  getSellPrice(buyBncOrder: BncOrder) {
+    const { signalId, price } = buyBncOrder;
+    const signal = this.telegramService.signals[signalId];
+    const { coin, terms } = signal;
+    const maxSellPrice = this.binanceService.filterPrice(coin, price * 1.03);
+    return Math.min(maxSellPrice, terms.short[0]);
     // const { dailyChangePercent } = this.binanceService;
     // if (dailyChangePercent < 0)
     //   return Math.min(...signal.terms.short, ...signal.terms.mid);
