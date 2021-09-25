@@ -211,6 +211,10 @@ export class TelegramService {
       this.logService.mlog('Duplicated signal');
       return;
     }
+    if (!symbol.endsWith('USDT')) {
+      this.logService.mlog('Non-USDT is not supported');
+      return;
+    }
     this.lastSymbol = symbol;
     const dailyStats = this.binanceService.getDailyStats(symbol);
     signalData.dailyStats = dailyStats;
