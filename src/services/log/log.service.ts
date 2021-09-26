@@ -28,10 +28,10 @@ export class LogService {
 
     const messages = msg.map(value => {
       if (typeof value === 'string') return value;
-      if (typeof value === 'object') return JSON.stringify(value);
+      if (typeof value === 'object') return JSON.stringify(value, null, 2);
       return value;
-    }).join('  |  ');
-    const data = `${date}  ${messages}\n`;
+    }).join('  \n  ');
+    const data = `${date}  ${messages}\n\n`;
     return data;
   }
 
@@ -55,6 +55,7 @@ export class LogService {
       fs.appendFileSync(filePath, '', { encoding: 'utf8' });
     }
 
+    res.set({ 'content-type': 'text/html; charset=utf-8' });
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
   }
