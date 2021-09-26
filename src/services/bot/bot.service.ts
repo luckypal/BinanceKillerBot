@@ -86,7 +86,7 @@ export class BotService {
     // if (leverage <= 1) return;
 
     try {
-      // await this.buy(signal);
+      await this.buy(signal);
     } catch (e) {
       this.logService.blog('ERROR', e);
     }
