@@ -109,7 +109,14 @@ export class BotService {
           || bnOrder.status == OrderStatus.PARTIALLY_FILLED) return;
 
         order.status = bnOrder.status;
-        if (order.side == OrderSide.BUY) order.order.price = parseFloat(bnOrder.price);
+        if (order.side == OrderSide.BUY) {
+          const {
+            executedQty,
+            cummulativeQuoteQty,
+          } = bnOrder;
+          const buyPrice = parseFloat(cummulativeQuoteQty) / parseFloat(executedQty);
+          order.order.price = buyPrice;
+        }
         order.order.closedAt = Date.now();
         this.logService.blog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
 
