@@ -315,6 +315,7 @@ export class BinanceService {
         }
       } else {
         const quantity = this.calculateQuantity(symbol, amount, 1);
+        const stopLossLimitPrice = this.filterPrice(symbol, stopLoss * 0.999);
 
         return await this.binance.marginOrderOco({
           symbol,
@@ -325,7 +326,7 @@ export class BinanceService {
           price: sPrice,
           quantity,
           stopPrice: sStopLoss,
-          stopLimitPrice: sStopLoss,
+          stopLimitPrice: stopLossLimitPrice.toString(),
         })
       }
     }

@@ -141,7 +141,11 @@ export class BotService {
       this.logService.blog(`Not able to transfer from Spot to Margin because of balance short ${amountToUse}`);
       return;
     }
-    this.logService.blog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse}`);
+
+    const leverageLevel = Math.max(...leverage);
+    const amountToBuyOrder = Math.min(amountToBuy, amountToUse * leverageLevel);
+
+    this.logService.blog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse} x ${leverageLevel} = ${amountToBuy} => ${amountToBuyOrder}`);
 
     const buyOrder: BncOrder = {
       id: '',
@@ -150,10 +154,10 @@ export class BotService {
       price: 0,
       createdAt: Date.now(),
       signalId,
-      leverage: Math.max(...leverage),
+      leverage: leverageLevel,
       status: BncOrderStatus.active,
     };
-    const order = (await this.binanceService.makeOrder(buyOrder, true, amountToBuy)) as Order;
+    const order = (await this.binanceService.makeOrder(buyOrder, true, amountToBuyOrder)) as Order;
     const { orderId } = order;
 
     const botOrder: BotOrder = {
@@ -175,14 +179,14 @@ export class BotService {
     const {
       symbol,
       signalId,
-      order: buyBncOrder
+      order: buyBncOrder,
     } = buyOrder;
     const signal = this.telegramService.signals[signalId];
     const {
       leverage,
     } = signal;
     const sellPrice = this.getSellPrice(buyBncOrder);
-    const stopLossPrice = this.getStopLossPrice(signal);
+    const stopLossPrice = this.getStopLossPrice(signal, buyBncOrder.price);
 
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
@@ -230,11 +234,21 @@ export class BotService {
     // return signal.terms.short[1];
   }
 
-  getStopLossPrice(signal: BKSignal) {
+  getStopLossPrice(signal: BKSignal, price: number) {
     // const { dailyChangePercent } = this.binanceService;
     // if (dailyChangePercent < 0)
     //   return Math.min(...signal.entry);
-    return signal.stopLoss
+
+    const {
+      coin,
+      stopLoss,
+      leverage,
+    } = signal;
+    const levLevel = Math.max(...leverage);
+    const limit = price * (1 - 1 / levLevel / 2) * 1.01;
+    let levStopLoss = Math.max(stopLoss, limit);
+    levStopLoss = this.binanceService.filterPrice(coin, levStopLoss);
+    return levStopLoss;
   }
 
   async refundToSpot(sellOrder: BotOrder) {
