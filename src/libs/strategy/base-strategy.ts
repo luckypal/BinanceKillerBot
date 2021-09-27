@@ -15,6 +15,13 @@ export interface OrderProperty {
   getStopLoss?: (signal: BKSignal, price: number, leverage: number, currentStopLoss: number) => number;
 }
 
+export interface BaseAmount {
+  signalId?: number | string;
+  symbol: string;
+  from: number;
+  to?: number;
+}
+
 export class BaseStrategy {
 
   public BUY_ORDER_LIFETIME = 24 * 60 * 60 * 1000;
@@ -226,16 +233,17 @@ export class BaseStrategy {
     };
     const { prices } = this.binanceService;
     const usdts = {};
-    const amounts = {};
+    const amounts: Record<number | string, BaseAmount> = {};
 
-    Object.values(this.orders).forEach(order => {
+    Object.values(this.orders).forEach((order, index) => {
       const {
         coin,
         price,
         stopLoss,
         leverage,
         type,
-        status
+        status,
+        signalId
       } = order;
       if (excepts.includes(coin)) return;
       if (!balances[coin]) balances[coin] = 0;
@@ -248,15 +256,20 @@ export class BaseStrategy {
         balances.SPOT -= amount;
         balances.LOAN += amount * (leverage - 1);
         balances[coin] += amount * leverage / price;
-        amounts[coin] = amount;
+        amounts[signalId] = {
+          symbol: coin,
+          from: amount,
+        };
       } else {
         let sellPrice = price;
         if (status == BncOrderStatus.stopLess) sellPrice = stopLoss;
 
-        const amount = amounts[coin];
-        balances.SPOT += (balances[coin] * sellPrice) - (amount * (leverage - 1));
+        const amount = amounts[signalId].from;
+        const newAmount = (balances[coin] * sellPrice) - (amount * (leverage - 1));
+        balances.SPOT += newAmount;
         balances.LOAN -= amount * (leverage - 1);
         balances[coin] = 0;
+        amounts[signalId].to = newAmount;
       }
     });
 

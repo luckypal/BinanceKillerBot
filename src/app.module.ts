@@ -1,7 +1,9 @@
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { EnvironmentModule } from '@nestjs-steroids/environment';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TelegramService } from './services/telegram/telegram.service';
@@ -20,7 +22,10 @@ import { BotService } from './services/bot/bot.service';
       useClass: AppEnvironment,
     }),
     EventEmitterModule.forRoot(),
-    ScheduleModule.forRoot()
+    ScheduleModule.forRoot(),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
   ],
   controllers: [AppController],
   providers: [

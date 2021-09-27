@@ -28,6 +28,7 @@
     "@nestjs/event-emitter": "^1.0.0",
     "@nestjs/platform-express": "^7.6.15",
     "@nestjs/schedule": "^1.0.1",
+    "@nestjs/serve-static": "^2.2.2",
     "@types/configstore": "^5.0.1",
     "binance-api-node": "^0.11.14",
     "class-transformer": "^0.4.0",
