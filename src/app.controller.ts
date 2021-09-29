@@ -1,3 +1,4 @@
+import * as moment from 'moment';
 import { Controller, Get, Header, HttpCode, Param, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { BinanceService } from './services/binance/binance.service';
@@ -6,11 +7,12 @@ import { StorageService } from './services/storage/storage.service';
 import { StrategyService } from './services/strategy/strategy.service';
 import { TelegramService } from './services/telegram/telegram.service';
 import { BotService } from './services/bot/bot.service';
+import { AppEnvironment } from './app.environment';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
+    private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
     private readonly logService: LogService,
@@ -68,7 +70,23 @@ export class AppController {
 
   @Get('signals')
   getSignals() {
-    return this.jsonBeautify(this.telegramService.signals);
+    const {
+      timezoneOffset,
+      dateTimeFormat
+    } = this.appEnvironment;
+    const signals = Object.values(this.telegramService.signals)
+      .sort((a, b) => {
+        if (a.createdAt < b.createdAt) return 1;
+        if (a.createdAt == b.createdAt) return 0;
+        return -1;
+      })
+      .map(signal => ({
+        ...signal,
+        createdDate: moment(signal.createdAt)
+          .utcOffset(timezoneOffset)
+          .format(dateTimeFormat)
+      }));
+    return this.jsonBeautify(signals);
   }
 
   @Get('prices')
@@ -126,8 +144,8 @@ export class AppController {
   removeSignal(
     @Param('signalId') signalId: string
   ) {
-   this.strategyService.removeSignal(signalId);
-   return 'Success';
+    this.strategyService.removeSignal(signalId);
+    return 'Success';
   }
 
   jsonBeautify(data) {

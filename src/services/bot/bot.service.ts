@@ -2,8 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MarginOcoOrder, Order, OrderSide, OrderStatus, OrderStatus_LT } from 'binance-api-node';
+import { AppEnvironment } from 'src/app.environment';
 import { BKSignal } from 'src/models/bk-signal';
 import { BncOrder, BncOrderStatus, BncOrderType } from 'src/models/bnc-order';
+import { sleep } from 'src/utils';
 import { BinanceService } from '../binance/binance.service';
 import { LogService } from '../log/log.service';
 import { TelegramService } from '../telegram/telegram.service';
@@ -24,6 +26,7 @@ export class BotService {
   orders: BotOrder[] = [];
 
   constructor(
+    private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
     private readonly logService: LogService
@@ -106,6 +109,7 @@ export class BotService {
       coin: symbol,
       leverage
     } = signal;
+    if (!this.appEnvironment.useOffset) await sleep(2000);
     const amountToUse = await this.amountToUse();
     const amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
     if (amountToBuy == 0) {
@@ -196,7 +200,9 @@ export class BotService {
     const { coin, terms } = signal;
     let maxSellPrice = price * 1.03;
     maxSellPrice = Math.min(maxSellPrice, terms.short[0]);
-    maxSellPrice = maxSellPrice * 0.9999;
+    if (this.appEnvironment.useOffset) {
+      maxSellPrice = maxSellPrice * 0.9999;
+    }
     maxSellPrice = this.binanceService.filterPrice(coin, maxSellPrice);
     return maxSellPrice;
     // const { dailyChangePercent } = this.binanceService;
@@ -216,7 +222,8 @@ export class BotService {
       leverage,
     } = signal;
     const levLevel = Math.max(...leverage);
-    const limit = price * (1 - 1 / levLevel / 2) * 1.01;
+    let limit = price * (1 - 1 / levLevel / 2) * 1.01;
+    if (!this.appEnvironment.useOffset) limit *= 1.001;
     let levStopLoss = Math.max(stopLoss, limit);
     levStopLoss = this.binanceService.filterPrice(coin, levStopLoss);
     return levStopLoss;

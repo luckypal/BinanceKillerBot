@@ -24,7 +24,10 @@ export class LogService {
   }
 
   getMessage(msg) {
-    const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
+    const {
+      timezoneOffset,
+      dateTimeFormat } = this.appEnvironment;
+    const date = moment().utcOffset(timezoneOffset).format(dateTimeFormat);
 
     const messages = msg.map(value => {
       if (typeof value === 'string') return value;

@@ -75,4 +75,16 @@ export class AppEnvironment {
   readonly bncUpdateInterval = 10;
 
   readonly logFileDir = './data'
+
+  @Env('USE_OFFSET')
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNumber()
+  readonly useOffset = 0;
+
+  @Env('TIMEZONE_OFFSET')
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNumber()
+  readonly timezoneOffset = -5;
+
+  readonly dateTimeFormat = 'YYYY-MM-DD HH:mm:ss';
 }
