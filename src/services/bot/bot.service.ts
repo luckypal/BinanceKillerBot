@@ -31,43 +31,7 @@ export class BotService {
     // setTimeout(() => this.startTest(), 10000);
   }
 
-  // async startTest() {
-  //   const signal: BKSignal = {
-  //     "signalId": 439,
-  //     "coin": "DOTUSDT",
-  //     "direction": "LONG📈",
-  //     "leverage": [
-  //       3,
-  //       5
-  //     ],
-  //     "entry": [
-  //       26,
-  //       27.05
-  //     ],
-  //     "ote": 26.46,
-  //     "terms": {
-  //       "short": [
-  //         27.4,
-  //         27.9,
-  //         28.5,
-  //         29.4,
-  //         30.5
-  //       ],
-  //       "mid": [
-  //         32,
-  //         34,
-  //         37,
-  //         41,
-  //         48
-  //       ],
-  //       "long": []
-  //     },
-  //     "stopLoss": 23.9,
-  //     "createdAt": 1632261411
-  //   };
-
-  //   this.onNewSignal(signal);
-  // }
+  // async startTest() { }
 
   @OnEvent('telegram.onSignal')
   async onNewSignal(signal: BKSignal) {
