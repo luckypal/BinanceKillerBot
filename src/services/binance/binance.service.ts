@@ -134,7 +134,7 @@ export class BinanceService {
     // const balance = await this.getUsdtBalance();
     // if (balance < amount) return 0;
 
-    await this.binance.activeMarginAccount({ symbol, isActive: true });
+    await this.binance.marginActiveAccount({ symbol, active: true });
     if (retry == 3) {
       try {
         await this.binance.marginCreateIsolated({
@@ -210,7 +210,7 @@ export class BinanceService {
       });
     }
 
-    await this.binance.activeMarginAccount({ symbol, isActive: false });
+    await this.binance.marginActiveAccount({ symbol, active: false });
 
     return amountToTransfer;
   }
