@@ -134,8 +134,12 @@ export class BinanceService {
     // const balance = await this.getUsdtBalance();
     // if (balance < amount) return 0;
 
-    await this.binance.marginActiveAccount({ symbol, active: true });
     if (retry == 3) {
+      try {
+        await this.binance.marginActiveAccount({ symbol, active: true });
+      } catch (e) {
+        this.logService.blog('marginCreateIsolated', e);
+      }
       try {
         await this.binance.marginCreateIsolated({
           base: symbol.replace('USDT', ''),
