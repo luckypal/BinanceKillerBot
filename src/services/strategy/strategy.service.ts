@@ -6,6 +6,7 @@ import { LogService } from '../log/log.service';
 import { BKSignal } from '../../models/bk-signal';
 import { BncOrder } from 'src/models/bnc-order';
 import { TelegramService } from '../telegram/telegram.service';
+import { AppEnvironment } from 'src/app.environment';
 
 @Injectable()
 export class StrategyService {
@@ -14,6 +15,7 @@ export class StrategyService {
   strategies: Record<string, BaseStrategy> = {};
 
   constructor(
+    private readonly appEnvironment: AppEnvironment,
     private readonly logService: LogService,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService
@@ -86,6 +88,7 @@ export class StrategyService {
       this.strategies[method] = new BaseStrategy(
         method,
         property,
+        this.appEnvironment,
         this.logService,
         this.binanceService,
         this.telegramService

@@ -1,4 +1,6 @@
 import * as cuid from 'cuid';
+import * as moment from 'moment';
+import { AppEnvironment } from 'src/app.environment';
 import { BinanceService } from 'src/services/binance/binance.service';
 import { LogService } from 'src/services/log/log.service';
 import { TelegramService } from 'src/services/telegram/telegram.service';
@@ -20,6 +22,8 @@ export interface BaseAmount {
   symbol: string;
   from: number;
   to?: number;
+  start?: string;
+  finish?: string;
 }
 
 export class BaseStrategy {
@@ -30,6 +34,7 @@ export class BaseStrategy {
   constructor(
     public readonly strategyId: string,
     private readonly orderProperty: OrderProperty,
+    private readonly appEnvironment: AppEnvironment,
     private readonly logService: LogService,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService
@@ -227,6 +232,10 @@ export class BaseStrategy {
     buyAmount: number,
     excepts: string[]
   ) {
+    const {
+      timezoneOffset,
+      dateTimeFormat
+    } = this.appEnvironment;
     const balances = {
       SPOT: primaryUsdt,
       LOAN: 0
@@ -235,7 +244,15 @@ export class BaseStrategy {
     const usdts = {};
     const amounts: Record<number | string, BaseAmount> = {};
 
-    Object.values(this.orders).forEach((order, index) => {
+    Object.values(this.orders)
+    .sort((a, b) => {
+      const date1 = a.type === BncOrderType.buy ? a.createdAt : a.closedAt;
+      const date2 = b.type === BncOrderType.buy ? b.createdAt : b.closedAt;
+      if (date1 > date2) return 1;
+      if (date1 == date2) return 0;
+      return -1;
+    })
+    .forEach((order, index) => {
       const {
         coin,
         price,
@@ -243,7 +260,9 @@ export class BaseStrategy {
         leverage,
         type,
         status,
-        signalId
+        signalId,
+        createdAt,
+        closedAt
       } = order;
       if (excepts.includes(coin)) return;
       if (!balances[coin]) balances[coin] = 0;
@@ -259,6 +278,7 @@ export class BaseStrategy {
         amounts[signalId] = {
           symbol: coin,
           from: amount,
+          start: moment(createdAt).utcOffset(timezoneOffset).format(dateTimeFormat),
         };
       } else {
         let sellPrice = price;
@@ -269,7 +289,11 @@ export class BaseStrategy {
         balances.SPOT += newAmount;
         balances.LOAN -= amount * (leverage - 1);
         balances[coin] = 0;
-        amounts[signalId].to = newAmount;
+        amounts[signalId] = {
+          ...amounts[signalId],
+          finish: moment(closedAt).utcOffset(timezoneOffset).format(dateTimeFormat),
+          to: newAmount,
+        };
       }
     });
 
@@ -287,8 +311,8 @@ export class BaseStrategy {
         SPOT: balances.SPOT,
         LOAN: balances.LOAN,
       },
-      USDT: usdts,
-      coins: balances,
+      // USDT: usdts,
+      // coins: balances,
       amounts
     };
   }
