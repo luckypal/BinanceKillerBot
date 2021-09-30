@@ -52,6 +52,13 @@ export class BotService {
     // const leverage = Math.max(...signal.leverage);
     // if (leverage <= 1) return;
 
+    const { coin } = signal;
+    const { coinExceptions } = this.appEnvironment;
+    if (coinExceptions.indexOf(coin) != -1) {
+      this.logService.blog(`${coin} is in Exceptional list.`);
+      return;
+    }
+
     try {
       await this.buy(signal);
     } catch (e) {

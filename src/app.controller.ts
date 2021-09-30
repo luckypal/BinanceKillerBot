@@ -1,6 +1,5 @@
 import * as moment from 'moment';
 import { Controller, Get, Header, HttpCode, Param, Res } from '@nestjs/common';
-import { AppService } from './app.service';
 import { BinanceService } from './services/binance/binance.service';
 import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';

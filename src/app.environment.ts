@@ -1,6 +1,6 @@
 import { Env } from '@nestjs-steroids/environment';
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNumber, Max, Min } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, Max, Min } from 'class-validator';
 
 enum NodeEnvironment {
   Development = 'development',
@@ -87,4 +87,12 @@ export class AppEnvironment {
   readonly timezoneOffset = -5;
 
   readonly dateTimeFormat = 'YYYY-MM-DD HH:mm:ss';
+
+  /**
+   * Exceptional coins for Bot
+   */
+  @Env('COIN_EXCEPTION')
+  @Transform(({ value }) => value.split(','))
+  @IsArray()
+  readonly coinExceptions = [];
 }
