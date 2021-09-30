@@ -100,6 +100,8 @@ export class CornixMessage {
     const direction = this.parseDirection(msgLines);
     // const exchange = this.parseExchange(msgLines);
     const leverage = this.parseLeverage(msgLines);
+    const leverages = [leverage];
+    if (leverage == 3) leverages.push(5);
 
     const entry = this.parseEntry(msgLines);
     const terms = this.parseTargets(msgLines);
@@ -112,7 +114,7 @@ export class CornixMessage {
       signalId,
       coin,
       direction,
-      leverage: [leverage],
+      leverage: leverages,
       entry,
       ote,
       terms,

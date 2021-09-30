@@ -219,8 +219,26 @@ export class TelegramService {
     signalData.dailyStats = dailyStats;
 
     this._signals[signalId] = signalData;
+    if (!this.verifySignalData(signalData)) return;
     this.eventEmitter.emit('telegram.onSignal', signalData);
 
     return signalData;
+  }
+
+  verifySignalData(signal: BKSignal) {
+    const {
+      coin,
+      terms,
+    } = signal;
+    const price = this.binanceService.prices[coin];
+    if (price > Math.min(...terms.short)) {
+      this.logService.mlog('Falling-down is not supported');
+      return false;
+    }
+    if (price * 1.1 < Math.min(...terms.short)) {
+      this.logService.mlog('Price-calculation error');
+      return false;
+    }
+    return true;
   }
 }
