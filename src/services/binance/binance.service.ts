@@ -136,7 +136,7 @@ export class BinanceService {
 
     if (retry == 3) {
       try {
-        await this.binance.marginActiveAccount({ symbol, active: true });
+        await this.binance.enableMarginAccount({ symbol });
       } catch (e) {
         this.logService.blog('marginCreateIsolated', e);
       }
@@ -214,7 +214,7 @@ export class BinanceService {
       });
     }
 
-    await this.binance.marginActiveAccount({ symbol, active: false });
+    await this.binance.disableMarginAccount({ symbol });
 
     return {
       quote: quote_amountToTransfer,
