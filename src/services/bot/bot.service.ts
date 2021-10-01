@@ -241,6 +241,7 @@ export class BotService {
       signalId,
       symbol
     } = sellOrder;
+    sleep(5000);
     const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol);
     this.logService.blog(`MARGIN2SPOT ${symbol}#${signalId} $${amountToTransfer.quote}, #${amountToTransfer.base}`);
   }
