@@ -1,4 +1,4 @@
-cd ~/bkiller/BinanceKillerBot
+cd ~/trade/bk-bot
 
 npm install
 
