@@ -29,15 +29,21 @@ export class TelegramService {
   ) { }
 
   start() {
+    const {
+      tgAppId,
+      tgApiHash,
+      tgDcId,
+      phoneNumber,
+      logFileDir } = this.appEnvironment;
     this.mtproto = new MTProto({
-      api_id: this.appEnvironment.tgAppId,
-      api_hash: this.appEnvironment.tgApiHash,
+      api_id: tgAppId,
+      api_hash: tgApiHash,
 
       storageOptions: {
-        path: './data/tgAuth.json',
+        path: `${logFileDir}/tgAuth.json`,
       },
     });
-    this.mtproto.setDefaultDc(this.appEnvironment.tgDcId);
+    this.mtproto.setDefaultDc(tgDcId);
 
 
     this.mtproto
@@ -52,7 +58,7 @@ export class TelegramService {
       })
       .catch(error => {
         console.log('Telegram Error', error)
-        this.startAuth(this.appEnvironment.phoneNumber);
+        this.startAuth(phoneNumber);
       })
 
     const isProcess = true;

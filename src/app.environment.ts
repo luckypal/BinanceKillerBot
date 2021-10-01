@@ -1,6 +1,6 @@
 import { Env } from '@nestjs-steroids/environment';
 import { Transform } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, Max, Min } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsString, Max, Min } from 'class-validator';
 
 enum NodeEnvironment {
   Development = 'development',
@@ -39,6 +39,9 @@ export class AppEnvironment {
     return this.isDevelopment() ? 'staging' : 'prod';
   }
 
+  @Env('SERVER_NAME')
+  readonly serverName = 'Default';
+
   @Env('TELEGRAM_API_ID')
   readonly tgAppId = '';
 
@@ -74,6 +77,9 @@ export class AppEnvironment {
   @IsNumber()
   readonly bncUpdateInterval = 10;
 
+  @Env('DATA_DIR')
+  @Transform(({ value }) => value ? `./${value}` : './data')
+  @IsString()
   readonly logFileDir = './data'
 
   @Env('USE_OFFSET')

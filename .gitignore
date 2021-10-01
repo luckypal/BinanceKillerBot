@@ -35,3 +35,6 @@ lerna-debug.log*
 
 .env
 data/*
+
+pm2/*.json
+!pm2/start.json

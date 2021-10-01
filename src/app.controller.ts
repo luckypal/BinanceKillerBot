@@ -31,6 +31,11 @@ export class AppController {
     }, 2000);
   }
 
+  @Get('name')
+  serverName() {
+    return this.appEnvironment.serverName;
+  }
+
   @Get('tg/start')
   tgAuth() {
     return this.telegramService.start();

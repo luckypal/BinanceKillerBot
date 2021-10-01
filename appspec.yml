@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: .
-    destination: /home/ubuntu/bkiller/BinanceKillerBot
+    destination: /home/ubuntu/trade/bk-bot
 permissions:
   - object: /home/ubuntu
     owner: ubuntu
