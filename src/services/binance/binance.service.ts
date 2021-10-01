@@ -184,12 +184,12 @@ export class BinanceService {
       borrowed,
       interest
     } = isolatedAccount.assets[0].quoteAsset;
-    let amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
+    const quote_amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
 
-    if (amountToTransfer) {
+    if (quote_amountToTransfer) {
       await this.binance.marginIsolatedTransfer({
         symbol,
-        amount: amountToTransfer,
+        amount: quote_amountToTransfer,
         asset,
         transTo: 'SPOT',
         transFrom: 'ISOLATED_MARGIN',
@@ -202,12 +202,12 @@ export class BinanceService {
       borrowed,
       interest
     } = isolatedAccount.assets[0].baseAsset);
-    amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
+    const base_amountToTransfer = parseFloat(netAsset) - parseFloat(borrowed) - parseFloat(interest);
 
-    if (amountToTransfer) {
+    if (base_amountToTransfer) {
       await this.binance.marginIsolatedTransfer({
         symbol,
-        amount: amountToTransfer,
+        amount: base_amountToTransfer,
         asset,
         transTo: 'SPOT',
         transFrom: 'ISOLATED_MARGIN',
@@ -216,7 +216,10 @@ export class BinanceService {
 
     await this.binance.marginActiveAccount({ symbol, active: false });
 
-    return amountToTransfer;
+    return {
+      quote: quote_amountToTransfer,
+      base: base_amountToTransfer
+    };
   }
 
   async getOrder(
