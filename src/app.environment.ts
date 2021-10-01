@@ -92,7 +92,7 @@ export class AppEnvironment {
    * Exceptional coins for Bot
    */
   @Env('COIN_EXCEPTION')
-  @Transform(({ value }) => value.split(','))
+  @Transform(({ value }) => value ? value.split(',') : [])
   @IsArray()
   readonly coinExceptions = [];
 }
