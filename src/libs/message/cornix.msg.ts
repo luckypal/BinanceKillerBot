@@ -85,10 +85,23 @@ export class CornixMessage {
   parseTargets(lines): BKSignalTerms {
     const targets = this.findLine(lines, 'TARGETS:');
     const terms = this.splitValues(targets);
-    const short = terms.splice(0, 5);
+    if (terms.length) {
+      const short = terms.splice(0, 5);
+      return {
+        short,
+        mid: terms,
+        long: []
+      };
+    }
+
+    const short = this.findLine(lines, 'Short Term:');
+    const shortValues = this.splitValues(short);
+
+    const mid = this.findLine(lines, 'Mid Term:');
+    const midValues = this.splitValues(mid);
     return {
-      short,
-      mid: terms,
+      short: shortValues,
+      mid: midValues,
       long: []
     };
   }

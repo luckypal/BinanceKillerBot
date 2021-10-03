@@ -224,8 +224,8 @@ export class TelegramService {
     const dailyStats = this.binanceService.getDailyStats(symbol);
     signalData.dailyStats = dailyStats;
 
-    this._signals[signalId] = signalData;
     if (!this.verifySignalData(signalData)) return;
+    this._signals[signalId] = signalData;
     this.eventEmitter.emit('telegram.onSignal', signalData);
 
     return signalData;
