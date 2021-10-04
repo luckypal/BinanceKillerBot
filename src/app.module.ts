@@ -13,6 +13,8 @@ import { LogService } from './services/log/log.service';
 import { StorageService } from './services/storage/storage.service';
 import { StrategyService } from './services/strategy/strategy.service';
 import { BotService } from './services/bot/bot.service';
+import { ApiController } from './controllers/api/api.controller';
+// import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -26,8 +28,18 @@ import { BotService } from './services/bot/bot.service';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
+    // ClientsModule.register([
+    //   {
+    //     name: "SERVICE_A",
+    //     transport: Transport.TCP,
+    //     options: {
+    //       host: "127.0.0.1",
+    //       port: 8888
+    //     }
+    //   }
+    // ])
   ],
-  controllers: [AppController],
+  controllers: [AppController, ApiController],
   providers: [
     AppService,
     TelegramService,

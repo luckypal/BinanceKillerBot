@@ -32,6 +32,11 @@ export class BinanceService {
     });
     this.updatePrice();
     this.updateLotSizes();
+
+    const clean = this.binance.ws.trades(['BTCUSDT'], trade => {
+      console.log('Trade', trade)
+      clean();
+    })
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)

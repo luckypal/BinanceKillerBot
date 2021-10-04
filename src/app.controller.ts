@@ -7,10 +7,15 @@ import { StrategyService } from './services/strategy/strategy.service';
 import { TelegramService } from './services/telegram/telegram.service';
 import { BotService } from './services/bot/bot.service';
 import { AppEnvironment } from './app.environment';
+import { AppService } from './app.service';
+import { MessagePattern } from '@nestjs/microservices';
+import { of } from 'rxjs';
+import { delay } from "rxjs/operators";
 
 @Controller()
 export class AppController {
   constructor(
+    private readonly appService: AppService,
     private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
