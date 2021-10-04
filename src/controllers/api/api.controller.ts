@@ -1,15 +1,12 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
-import { Ctx, MessagePattern, NatsContext, Payload } from '@nestjs/microservices';
-import { of } from 'rxjs';
-import { delay } from "rxjs/operators";
+import { Controller, Get, Param } from '@nestjs/common';
+import { AppEnvironment } from 'src/app.environment';
 
-import { AppService } from 'src/app.service';
 import { BinanceService } from 'src/services/binance/binance.service';
 
 @Controller('api')
 export class ApiController {
   constructor(
-    private readonly appService: AppService,
+    private appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
   ) { }
 
@@ -23,8 +20,16 @@ export class ApiController {
   getPrice(
     @Param('symbol') symbol: string
   ) {
-    const price = this.binanceService.prices[symbol];
-    return this.binanceService.filterPrice(symbol, price);
+    if (this.appEnvironment.isDevelopment()) {
+      const price = this.binanceService.prices[symbol];
+      return this.binanceService.filterPrice(symbol, price);
+    } else {
+      const { watchSymbol } = this.binanceService;
+      if (watchSymbol != symbol) {
+        this.binanceService.setWatchSymbol(symbol);
+      }
+      return this.binanceService.watchPrice;
+    }
   }
 
   // @MessagePattern({ cmd: "getPrice" })

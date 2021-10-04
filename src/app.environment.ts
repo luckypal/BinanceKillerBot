@@ -2,7 +2,7 @@ import { Env } from '@nestjs-steroids/environment';
 import { Transform } from 'class-transformer';
 import { IsArray, IsEnum, IsNumber, IsString, Max, Min } from 'class-validator';
 
-enum NodeEnvironment {
+export enum NodeEnvironment {
   Development = 'development',
   Production = 'production',
   Test = 'test',

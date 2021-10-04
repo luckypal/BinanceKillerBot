@@ -17,6 +17,10 @@ export class BinanceService {
 
   public prices = {};
 
+  public watchSymbol = '';
+  public watchPrice = 0;
+  public watchTrade = null;
+
   constructor(
     private readonly appEnvironment: AppEnvironment,
     private eventEmitter: EventEmitter2,
@@ -32,11 +36,6 @@ export class BinanceService {
     });
     this.updatePrice();
     this.updateLotSizes();
-
-    const clean = this.binance.ws.trades(['BTCUSDT'], trade => {
-      console.log('Trade', trade)
-      clean();
-    })
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -55,6 +54,19 @@ export class BinanceService {
   async updateLotSizes() {
     if (!this.binance) return;
     this.getLotSizes();
+  }
+
+  setWatchSymbol(symbol) {
+    this.watchSymbol = symbol;
+    if (this.watchTrade) this.watchTrade();
+
+    this.watchTrade = this.binance.ws.trades(['BTCUSDT'], trade => {
+      const {
+        symbol,
+        price } = trade;
+      if (this.watchSymbol != symbol) return;
+      this.watchPrice = this.filterPrice(symbol, parseFloat(price));
+    });
   }
 
   async getLotSizes() {
