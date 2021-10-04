@@ -16,21 +16,21 @@ export class ApiController {
       .filter(symbol => symbol.endsWith('USDT'));
   }
 
-  @Get('price/:symbol')
-  getPrice(
-    @Param('symbol') symbol: string
-  ) {
-    if (this.appEnvironment.isDevelopment()) {
-      const price = this.binanceService.prices[symbol];
-      return this.binanceService.filterPrice(symbol, price);
-    } else {
-      const { watchSymbol } = this.binanceService;
-      if (watchSymbol != symbol) {
-        this.binanceService.setWatchSymbol(symbol);
-      }
-      return this.binanceService.watchPrice;
-    }
-  }
+  // @Get('price/:symbol')
+  // getPrice(
+  //   @Param('symbol') symbol: string
+  // ) {
+  //   if (this.appEnvironment.isDevelopment()) {
+  //     const price = this.binanceService.prices[symbol];
+  //     return this.binanceService.filterPrice(symbol, price);
+  //   } else {
+  //     const { watchSymbol } = this.binanceService;
+  //     if (watchSymbol != symbol) {
+  //       this.binanceService.setWatchSymbol(symbol);
+  //     }
+  //     return this.binanceService.watchPrice;
+  //   }
+  // }
 
   // @MessagePattern({ cmd: "getPrice" })
   // ping({ symbol }: { symbol: string }) {

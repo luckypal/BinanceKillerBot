@@ -14,6 +14,7 @@ import { StorageService } from './services/storage/storage.service';
 import { StrategyService } from './services/strategy/strategy.service';
 import { BotService } from './services/bot/bot.service';
 import { ApiController } from './controllers/api/api.controller';
+import { PriceGateway } from './modules/price/price.gateway';
 // import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -47,7 +48,8 @@ import { ApiController } from './controllers/api/api.controller';
     LogService,
     StorageService,
     StrategyService,
-    BotService
+    BotService,
+    PriceGateway
   ],
 })
 export class AppModule { }

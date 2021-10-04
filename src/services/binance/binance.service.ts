@@ -43,6 +43,10 @@ export class BinanceService {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
     this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
+    
+    if (this.appEnvironment.isDevelopment() && this.watchSymbol) {
+      this.watchPrice = this.filterPrice(this.watchSymbol, this.prices[this.watchSymbol]);
+    }
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -60,13 +64,17 @@ export class BinanceService {
     this.watchSymbol = symbol;
     if (this.watchTrade) this.watchTrade();
 
-    this.watchTrade = this.binance.ws.trades(['BTCUSDT'], trade => {
-      const {
-        symbol,
-        price } = trade;
-      if (this.watchSymbol != symbol) return;
-      this.watchPrice = this.filterPrice(symbol, parseFloat(price));
-    });
+    if (this.appEnvironment.isDevelopment()) {
+      this.watchPrice = this.filterPrice(this.watchSymbol, this.prices[this.watchSymbol]);
+    } else {
+      this.watchTrade = this.binance.ws.trades([this.watchSymbol], trade => {
+        const {
+          symbol,
+          price } = trade;
+        if (this.watchSymbol != symbol) return;
+        this.watchPrice = this.filterPrice(symbol, parseFloat(price));
+      });
+    }
   }
 
   async getLotSizes() {
