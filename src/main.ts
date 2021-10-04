@@ -9,14 +9,5 @@ async function bootstrap() {
   const appEnvironment = app.get(AppEnvironment);
   const port = process.env.PORT || appEnvironment.port;
   await app.listen(port);
-
-  // const microApp = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
-  //   transport: Transport.TCP,
-  //   options: {
-  //     host: "127.0.0.1",
-  //     port: 8888
-  //   }
-  // });
-  // microApp.listen();
 }
 bootstrap();

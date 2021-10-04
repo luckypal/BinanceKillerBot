@@ -8,9 +8,6 @@ import { TelegramService } from './services/telegram/telegram.service';
 import { BotService } from './services/bot/bot.service';
 import { AppEnvironment } from './app.environment';
 import { AppService } from './app.service';
-import { MessagePattern } from '@nestjs/microservices';
-import { of } from 'rxjs';
-import { delay } from "rxjs/operators";
 
 @Controller()
 export class AppController {

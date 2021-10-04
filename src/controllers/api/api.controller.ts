@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppEnvironment } from 'src/app.environment';
 
 import { BinanceService } from 'src/services/binance/binance.service';
@@ -30,10 +30,5 @@ export class ApiController {
   //     }
   //     return this.binanceService.watchPrice;
   //   }
-  // }
-
-  // @MessagePattern({ cmd: "getPrice" })
-  // ping({ symbol }: { symbol: string }) {
-  //   return symbol;
   // }
 }

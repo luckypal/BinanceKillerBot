@@ -15,7 +15,6 @@ import { StrategyService } from './services/strategy/strategy.service';
 import { BotService } from './services/bot/bot.service';
 import { ApiController } from './controllers/api/api.controller';
 import { PriceGateway } from './modules/price/price.gateway';
-// import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -29,16 +28,6 @@ import { PriceGateway } from './modules/price/price.gateway';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
-    // ClientsModule.register([
-    //   {
-    //     name: "SERVICE_A",
-    //     transport: Transport.TCP,
-    //     options: {
-    //       host: "127.0.0.1",
-    //       port: 8888
-    //     }
-    //   }
-    // ])
   ],
   controllers: [AppController, ApiController],
   providers: [
