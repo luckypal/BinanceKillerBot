@@ -104,7 +104,8 @@ export class BotService {
 
   async amountToUse() {
     const totalAmount = await this.binanceService.getUsdtBalance();
-    const amountToUse = Math.floor(totalAmount / 2);
+    const { ratioTradeOnce } = this.appEnvironment;
+    const amountToUse = Math.floor(totalAmount * ratioTradeOnce);
     return amountToUse;
     // if (totalAmount > 10) return 10;
     // else throw 'NOT enough balance';
