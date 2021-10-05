@@ -1,4 +1,3 @@
-import { Module } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   WebSocketGateway,
@@ -9,7 +8,13 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { AppEnvironment } from 'src/app.environment';
 import { BinanceService } from 'src/services/binance/binance.service';
+
+export interface MessageSetSymbol {
+  symbol: string;
+  secretKey: string;
+}
 
 @WebSocketGateway({ cors: true })
 export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -18,27 +23,32 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   clients = [];
 
   constructor(
+    private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService
-  ) {}
+  ) { }
 
-  async handleConnection() {
-    this.clients = [];
+  async handleConnection(client) {
+    this.clients.push(client);
   }
 
-  async handleDisconnect() {
-    this.clients = [];
+  async handleDisconnect(client) {
+    const index = this.clients.indexOf(client);
+    if (index === -1) return;
+    this.clients.splice(index, 1);
   }
 
   @SubscribeMessage('symbol')
   async onSetPrice(
-    @ConnectedSocket() client,
-    @MessageBody() { symbol }: { symbol: string }) {
+    @MessageBody() { symbol, secretKey }: MessageSetSymbol) {
+    const { frontendSecKey } = this.appEnvironment;
+    if (secretKey != frontendSecKey) return;
+
     this.binanceService.setWatchSymbol(symbol);
-    this.clients.push(client);
   }
 
   @Cron(CronExpression.EVERY_SECOND)
   sendPrice() {
+    console.log('Clients: ', this.clients.length);
     this.clients.forEach(client => {
       try {
         const {

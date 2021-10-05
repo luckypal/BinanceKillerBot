@@ -106,4 +106,8 @@ export class AppEnvironment {
   @Transform(({ value }) => Number.parseFloat(value))
   @IsNumber()
   readonly ratioTradeOnce = 0.5;
+
+  @Env('FRONTEND_SECRET_KEY')
+  @IsString()
+  readonly frontendSecKey = '';
 }
