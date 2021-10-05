@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppEnvironment } from 'src/app.environment';
 
 import { BinanceService } from 'src/services/binance/binance.service';
@@ -31,4 +31,12 @@ export class ApiController {
   //     return this.binanceService.watchPrice;
   //   }
   // }
+
+  @Post('auth')
+  auth(@Body() { secretKey }: { secretKey: string }) {
+    const { frontendSecKey } = this.appEnvironment;
+    return {
+      result: secretKey === frontendSecKey
+    };
+  }
 }

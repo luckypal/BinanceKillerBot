@@ -48,7 +48,6 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @Cron(CronExpression.EVERY_SECOND)
   sendPrice() {
-    console.log('Clients: ', this.clients.length);
     this.clients.forEach(client => {
       try {
         const {
