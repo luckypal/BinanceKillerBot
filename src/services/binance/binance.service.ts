@@ -1,5 +1,6 @@
-import BinanceApi, { Binance, DailyStatsResult, OrderSide, OrderStatus, OrderType, SideEffectType } from 'binance-api-node'
+import BinanceApi, { Binance, DailyStatsResult, Order, OrderSide, OrderStatus, OrderType, SideEffectType } from 'binance-api-node'
 import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { EventEmitter2 } from 'eventemitter2';
 import { AppEnvironment } from 'src/app.environment';
 import { BncOrder, BncOrderType } from 'src/models/bnc-order';
@@ -7,6 +8,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from 'src/utils';
 import { LogService } from '../log/log.service';
 import { BNDailyStats } from 'src/models/bk-signal';
+import { NewCoin } from 'src/models/new-coin';
 
 @Injectable()
 export class BinanceService {
@@ -20,6 +22,8 @@ export class BinanceService {
   public watchSymbol = '';
   public watchPrice = 0;
   public watchTrade = null;
+
+  spotBalance = 0;
 
   constructor(
     private readonly appEnvironment: AppEnvironment,
@@ -36,6 +40,7 @@ export class BinanceService {
     });
     this.updatePrice();
     this.updateLotSizes();
+    this.updateBalance();
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -43,7 +48,7 @@ export class BinanceService {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
     this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
-    
+
     if (this.appEnvironment.isDevelopment() && this.watchSymbol) {
       this.watchPrice = this.filterPrice(this.watchSymbol, this.prices[this.watchSymbol]);
     }
@@ -57,7 +62,60 @@ export class BinanceService {
   @Cron(CronExpression.EVERY_HOUR)
   async updateLotSizes() {
     if (!this.binance) return;
-    this.getLotSizes();
+    await this.getLotSizes();
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async updateBalance() {
+    this.spotBalance = await this.getUsdtBalance();
+  }
+
+  @OnEvent('binance.newcoin')
+  async buyNewCoin(coins: NewCoin[]) {
+    const { ratioTradeNewCoin } = this.appEnvironment;
+    const amount = this.spotBalance * ratioTradeNewCoin;
+    const sAmount = Math.floor(amount).toString();
+    coins.forEach(async newCoin => {
+      let count = 0;
+      while (count < 10) {
+        const { symbol } = newCoin;
+        try {
+          const order = await this.binance.order({
+            symbol,
+            side: OrderSide.BUY,
+            quoteOrderQty: sAmount, // USDT amount
+            type: OrderType.MARKET,
+          });
+
+          this.logService.blog('Buy new coin', newCoin, order);
+          this.onBuyNewCoin(newCoin);
+          break;
+        } catch (e) {
+          const { message } = e;
+          console.log(new Date(), newCoin, count, message);
+          // if (message == 'Invalid symbol.') await sleep(1000);
+          await sleep(100 * count);
+          count += 1;
+        }
+      }
+    });
+  }
+
+  async onBuyNewCoin(newCoin: NewCoin) {
+    this.eventEmitter.emit('binance.newCoin.ordered', newCoin);
+    await sleep(30 * 1000);
+
+    await this.updateLotSizes();
+    const { symbol } = newCoin;
+    const quantity = await this.getBalance(symbol.replace('USDT', ''));
+    const sQuantity = this.calculateQuantity(symbol, quantity, 1);
+    const sellOrder = await this.binance.order({
+      symbol: symbol,
+      side: OrderSide.SELL,
+      quantity: sQuantity,
+      type: OrderType.MARKET,
+    });
+    this.logService.blog('Sell new coin', newCoin, sQuantity, sellOrder);
   }
 
   setWatchSymbol(symbol) {
@@ -115,6 +173,12 @@ export class BinanceService {
   async getUsdtBalance() {
     const account = await this.binance.accountInfo();
     const balance = account.balances.find((balance) => balance.asset == 'USDT');
+    return parseFloat(balance.free);
+  }
+
+  async getBalance(symbol: string) {
+    const account = await this.binance.accountInfo();
+    const balance = account.balances.find((balance) => balance.asset == symbol);
     return parseFloat(balance.free);
   }
 

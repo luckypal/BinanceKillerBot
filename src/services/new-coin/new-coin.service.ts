@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
+import { EventEmitter2 } from 'eventemitter2';
 import { NewCoin } from 'src/models/new-coin';
 import { BinanceArticle } from 'src/models/news';
 import { BinanceService } from '../binance/binance.service';
@@ -12,7 +14,8 @@ export class NewCoinService {
   URL_BINANCE_ARTICLE = 'https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=48&pageNo=1&pageSize=100';
 
   constructor(
-    private readonly binanceService: BinanceService
+    private readonly binanceService: BinanceService,
+    private eventEmitter: EventEmitter2,
   ) { }
 
   start() {
@@ -25,6 +28,33 @@ export class NewCoinService {
       .then(({ data: { data: { articles } } }: { data: { data: { articles: BinanceArticle[] } } }) => {
         this.checkNewCoins(articles);
       });
+  }
+
+  @Cron('59 59 * * * *')
+  buyNewCoin0() {
+    this.buyNewCoin();
+  }
+
+  @Cron('59 29 * * * *')
+  buyNewCoin30() {
+    this.buyNewCoin();
+  }
+
+  buyNewCoin() {
+    console.log('Buy New coin - check', new Date());
+    const newCoins = this.data.filter(({ isExist }) => !isExist);
+    if (!newCoins.length) return;
+
+    this.eventEmitter.emit('binance.newcoin', newCoins);
+  }
+
+  @OnEvent('binance.newCoin.ordered')
+  onNewCoinOrdered(newCoin: NewCoin) {
+    console.log('onNewCoinOrdered', newCoin);
+    const index = this.data.findIndex(({ symbol }) => (symbol == newCoin.symbol));
+    if (index == -1) return;
+
+    this.data[index].isExist = true;
   }
 
   checkNewCoins(articles: BinanceArticle[]) {

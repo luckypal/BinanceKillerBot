@@ -102,8 +102,13 @@ export class AppEnvironment {
   @IsArray()
   readonly coinExceptions = [];
 
+  @Env('RATIO_TRADE_NEWCOIN')
+  @Transform(({ value }) => value ? Number.parseFloat(value) : 0.9)
+  @IsNumber()
+  readonly ratioTradeNewCoin = 0.9;
+
   @Env('RATIO_TRADE_ONCE')
-  @Transform(({ value }) => Number.parseFloat(value))
+  @Transform(({ value }) => value ? Number.parseFloat(value) : 0.5)
   @IsNumber()
   readonly ratioTradeOnce = 0.5;
 
