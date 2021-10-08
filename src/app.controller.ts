@@ -9,6 +9,7 @@ import { BotService } from './services/bot/bot.service';
 import { AppEnvironment } from './app.environment';
 import { AppService } from './app.service';
 import { NewsService } from './services/news/news.service';
+import { NewCoinService } from './services/new-coin/new-coin.service';
 
 @Controller()
 export class AppController {
@@ -21,7 +22,8 @@ export class AppController {
     private readonly storageService: StorageService,
     private readonly strategyService: StrategyService,
     private readonly botService: BotService,
-    private readonly newsService: NewsService
+    private readonly newsService: NewsService,
+    private readonly newCoinService: NewCoinService
   ) {
     setTimeout(() => this.startController(), 1000);
   }
@@ -35,6 +37,7 @@ export class AppController {
     }, 2000);
 
     this.newsService.start();
+    this.newCoinService.start();
   }
 
   @Get('name')

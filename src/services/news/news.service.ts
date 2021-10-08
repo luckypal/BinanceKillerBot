@@ -1,27 +1,9 @@
 import axios from 'axios';
 import { Injectable } from '@nestjs/common';
 import { AppEnvironment } from 'src/app.environment';
-import { resolve } from 'path';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from 'src/utils';
-
-export enum NewsSource {
-  Binance = 'Binance'
-}
-
-export interface News {
-  id: string;
-  from: NewsSource;
-  title: string;
-  data: any;
-  createdAt: number;
-}
-
-export interface BinanceArticle {
-  id: number;
-  code: string;
-  title: string;
-}
+import { BinanceArticle, News, NewsSource } from 'src/models/news';
 
 @Injectable()
 export class NewsService {
