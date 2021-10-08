@@ -429,6 +429,13 @@ export class BinanceService {
     }
   }
 
+  cancelOrder(symbol: string, orderId: number) {
+    return this.binance.marginCancelOrder({
+      symbol,
+      orderId
+    });
+  }
+
   async amountToRepay(symbol: string) {
     const info = await this.binance.marginIsolatedAccount({ symbols: symbol });
     const { free } = info.assets[0].baseAsset;

@@ -19,6 +19,7 @@ interface BotOrder {
 
   signalId: number | string;
   order: BncOrder;
+  target?: number;
 }
 
 @Injectable()
@@ -66,6 +67,33 @@ export class BotService {
     }
   }
 
+  @OnEvent('binance.onUpdatePrices')
+  onUpdatePrices(prices: Record<string, number>) {
+    const { signals } = this.telegramService;
+
+    this.orders
+      .filter((order) => (order.status == OrderStatus.NEW))
+      .forEach(async (order) => {
+        const {
+          signalId,
+          symbol,
+          target = 0 } = order;
+        const price = prices[symbol];
+        const {
+          terms } = signals[signalId];
+        const targets = [
+          ...terms.short,
+          ...terms.mid,
+          ...terms.long
+        ];
+        if (target == targets.length - 1) return;
+        if (targets[target] <= price) {
+          order.status = OrderStatus.CANCELED;
+          this.updateSellOrderTarget(order, target);
+        }
+      })
+  }
+
   @Cron(CronExpression.EVERY_10_SECONDS)
   watchOrders() {
     this.orders.forEach(async (order) => {
@@ -105,8 +133,10 @@ export class BotService {
   async amountToUse() {
     const totalAmount = await this.binanceService.getUsdtBalance();
     const { ratioTradeOnce } = this.appEnvironment;
-    const amountToUse = Math.floor(totalAmount * ratioTradeOnce);
-    return amountToUse;
+    let useAmount = totalAmount * ratioTradeOnce;
+    if (ratioTradeOnce > 1) useAmount = Math.min(ratioTradeOnce, totalAmount);
+
+    return Math.floor(useAmount);
     // if (totalAmount > 10) return 10;
     // else throw 'NOT enough balance';
   }
@@ -168,7 +198,8 @@ export class BotService {
     const {
       leverage,
     } = signal;
-    const sellPrice = this.getSellPrice(buyBncOrder);
+    // const sellPrice = this.getSellPrice(buyBncOrder);
+    const sellPrice = this.getMaxSellPrice(buyBncOrder);
     const stopLossPrice = this.getStopLossPrice(signal, buyBncOrder.price);
 
     const amountToSell = await this.binanceService.amountToRepay(symbol);
@@ -195,11 +226,68 @@ export class BotService {
       status: OrderStatus.NEW,
 
       signalId,
-      order: sellOrder
+      order: sellOrder,
+      target: 0
     };
     this.orders.push(botOrder);
     this.logService.blog(`SELL ORDER ${symbol}#${orderId} is created.`, amountToSell, order);
     return botOrder;
+  }
+
+  async updateSellOrderTarget(orgOrder: BotOrder, target: number) {
+    const { signals } = this.telegramService;
+    const {
+      orderId,
+      signalId,
+      symbol } = orgOrder;
+    const {
+      leverage,
+      entry,
+      terms } = signals[signalId];
+    const targets = [
+      ...terms.short,
+      ...terms.mid,
+      ...terms.long
+    ];
+
+    const cancelResult = await this.binanceService.cancelOrder(symbol, orderId);
+    this.logService.blog('Order cancel Result', cancelResult);
+
+    const sellPrice = Math.max(...targets);
+    const minTarget = (Math.max(...entry) + targets[0]) / 2;
+    const newStopLoss = target == 0 ? minTarget : targets[target - 1];
+    const stopLossPrice = this.binanceService.filterPrice(symbol, newStopLoss);
+    this.logService.blog(`SELL ORDER ${symbol}#${orderId} is removed to update stop loss.`, stopLossPrice);
+
+    const amountToSell = await this.binanceService.amountToRepay(symbol);
+
+    const sellOrder: BncOrder = {
+      id: '',
+      coin: symbol,
+      type: BncOrderType.sell,
+      price: sellPrice,
+      createdAt: Date.now(),
+      signalId,
+      leverage: Math.max(...leverage),
+      status: BncOrderStatus.active,
+      stopLoss: stopLossPrice,
+    };
+    const newSellOrder = (await this.binanceService.makeOrder(sellOrder, true, amountToSell)) as MarginOcoOrder;
+    const { orderId: newOrderId } = newSellOrder.orderReports[0];
+
+    const botOrder: BotOrder = {
+      orderId: newOrderId,
+      symbol,
+      isIsolated: "TRUE",
+      side: OrderSide.SELL,
+      status: OrderStatus.NEW,
+
+      signalId,
+      order: sellOrder,
+      target: target + 1
+    };
+    this.orders.push(botOrder);
+    this.logService.blog(`SELL ORDER ${symbol}#${newOrderId} is recreated.`, amountToSell, newSellOrder);
   }
 
   getSellPrice(buyBncOrder: BncOrder) {
@@ -217,6 +305,19 @@ export class BotService {
     // if (dailyChangePercent < 0)
     //   return Math.min(...signal.terms.short, ...signal.terms.mid);
     // return signal.terms.short[1];
+  }
+
+  getMaxSellPrice(buyBncOrder: BncOrder) {
+    const { signalId } = buyBncOrder;
+    const signal = this.telegramService.signals[signalId];
+    const { terms } = signal;
+
+    const targets = [
+      ...terms.short,
+      ...terms.mid,
+      ...terms.long
+    ];
+    return Math.max(...targets);
   }
 
   getStopLossPrice(signal: BKSignal, price: number) {
@@ -242,7 +343,7 @@ export class BotService {
       signalId,
       symbol
     } = sellOrder;
-    sleep(5000);
+    await sleep(5000);
     const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol);
     this.logService.blog(`MARGIN2SPOT ${symbol}#${signalId} $${amountToTransfer.quote}, #${amountToTransfer.base}`);
   }
