@@ -8,6 +8,7 @@ import { TelegramService } from './services/telegram/telegram.service';
 import { BotService } from './services/bot/bot.service';
 import { AppEnvironment } from './app.environment';
 import { AppService } from './app.service';
+import { NewsService } from './services/news/news.service';
 
 @Controller()
 export class AppController {
@@ -19,7 +20,8 @@ export class AppController {
     private readonly logService: LogService,
     private readonly storageService: StorageService,
     private readonly strategyService: StrategyService,
-    private readonly botService: BotService
+    private readonly botService: BotService,
+    private readonly newsService: NewsService
   ) {
     setTimeout(() => this.startController(), 1000);
   }
@@ -31,6 +33,8 @@ export class AppController {
     setTimeout(() => {
       this.telegramService.start();
     }, 2000);
+
+    this.newsService.start();
   }
 
   @Get('name')

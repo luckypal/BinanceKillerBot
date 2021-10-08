@@ -6,12 +6,14 @@ import { StrategyService } from '../strategy/strategy.service';
 import { AppEnvironment } from 'src/app.environment';
 import { BotService } from '../bot/bot.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { NewsService } from '../news/news.service';
 
 @Injectable()
 export class StorageService {
   dataFilePath = '';
   signalsFilePath = '';
   botOrderFilePath = '';
+  newsFilePath = '';
 
   isLoaded = false;
 
@@ -21,11 +23,13 @@ export class StorageService {
     public readonly binanceService: BinanceService,
     public readonly telegramService: TelegramService,
     public readonly botService: BotService,
+    public readonly newsService: NewsService,
   ) {
     const { logFileDir } = this.appEnvironment;
     this.dataFilePath = `${logFileDir}/data.json`;
     this.signalsFilePath = `${logFileDir}/signals.json`;
     this.botOrderFilePath = `${logFileDir}/bot_orders.json`;
+    this.newsFilePath = `${logFileDir}/news.json`;
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -35,10 +39,12 @@ export class StorageService {
     const data = this.strategyService.getData();
     const signals = this.telegramService.signals;
     const orders = this.botService.orders;
+    const news = this.newsService.data;
 
     this.saveFile(this.dataFilePath, data);
     this.saveFile(this.signalsFilePath, signals);
     this.saveFile(this.botOrderFilePath, orders);
+    this.saveFile(this.newsFilePath, news);
     return true;
   }
 
@@ -56,6 +62,7 @@ export class StorageService {
     this.strategyService.setData(this.loadFile(this.dataFilePath) || {});
     this.telegramService.signals = this.loadFile(this.signalsFilePath) || {};
     this.botService.orders = this.loadFile(this.botOrderFilePath) || [];
+    this.newsService.data = this.loadFile(this.newsFilePath) || [];
 
     this.isLoaded = true;
 
