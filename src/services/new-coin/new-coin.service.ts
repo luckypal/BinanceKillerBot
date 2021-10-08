@@ -11,7 +11,7 @@ import { BinanceService } from '../binance/binance.service';
 export class NewCoinService {
   data: NewCoin[] = [];
 
-  URL_BINANCE_ARTICLE = 'https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=48&pageNo=1&pageSize=100';
+  URL_BINANCE_ARTICLE = 'https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=48&pageNo=1&pageSize=15';
 
   constructor(
     private readonly binanceService: BinanceService,
@@ -41,7 +41,6 @@ export class NewCoinService {
   }
 
   buyNewCoin() {
-    console.log('Buy New coin - check', new Date());
     const newCoins = this.data.filter(({ isExist }) => !isExist);
     if (!newCoins.length) return;
 
