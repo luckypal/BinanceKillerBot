@@ -3,6 +3,8 @@ os: linux
 files:
   - source: .
     destination: /home/ubuntu/trade/bk-bot
+  - source: .
+    destination: /home/ubuntu/trade/bk-bot-cstar
 permissions:
   - object: /home/ubuntu
     owner: ubuntu
