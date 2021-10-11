@@ -117,4 +117,6 @@ export class AppEnvironment {
   readonly frontendSecKey = '';
 
   readonly buyOrderLiveTime = 24; // Hours.
+
+  readonly isUseStepping = false; // Stepping stop loss
 }

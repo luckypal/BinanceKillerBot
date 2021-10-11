@@ -73,6 +73,8 @@ export class BotService {
   @OnEvent('binance.onUpdatePrices')
   onUpdatePrices(prices: Record<string, number>) {
     const { signals } = this.telegramService;
+    const { isUseStepping } = this.appEnvironment;
+    if (!isUseStepping) return;
 
     this.orders
       .filter((order) => (order.side == OrderSide.SELL && order.status == OrderStatus.NEW))
@@ -220,10 +222,12 @@ export class BotService {
     const {
       leverage,
     } = signal;
-    // const sellPrice = this.getSellPrice(buyBncOrder);
-    const sellPrice = this.getMaxSellPrice(buyBncOrder);
-    const stopLossPrice = this.getStopLossPrice(signal, buyBncOrder.price);
+    let sellPrice = this.getSellPrice(buyBncOrder);
 
+    const { isUseStepping } = this.appEnvironment;
+    if (isUseStepping) sellPrice = this.getMaxSellPrice(buyBncOrder);
+
+    const stopLossPrice = this.getStopLossPrice(signal, buyBncOrder.price);
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
     const sellOrder: BncOrder = {
@@ -274,6 +278,7 @@ export class BotService {
 
     const cancelResult = await this.binanceService.cancelOrder(symbol, orderId);
     this.logService.blog('Order cancel Result', cancelResult);
+    await sleep(5000);
 
     const sellPrice = Math.max(...targets);
     const minTarget = (Math.max(...entry) + targets[0]) / 2;
@@ -294,7 +299,7 @@ export class BotService {
       status: BncOrderStatus.active,
       stopLoss: stopLossPrice,
     };
-    const newSellOrder = (await this.binanceService.makeOrder(sellOrder, true, amountToSell)) as MarginOcoOrder;
+    const newSellOrder = (await this.binanceService.makeOrder(sellOrder, false, amountToSell)) as MarginOcoOrder;
     const { orderId: newOrderId } = newSellOrder.orderReports[0];
 
     const botOrder: BotOrder = {
