@@ -19,7 +19,9 @@ export class NewCoinService {
   ) { }
 
   start() {
-    this.getBinanceArticle();
+    setTimeout(() => {
+      this.getBinanceArticle();
+    }, 5000);
   }
 
   @Cron(CronExpression.EVERY_30_MINUTES)
@@ -77,5 +79,10 @@ export class NewCoinService {
       isExist: !!isExist,
       createdAt: Date.now()
     });
+  }
+
+  hasNewCoin() {
+    const newCoins = this.data.filter(({ isExist }) => !isExist);
+    return !!newCoins.length;
   }
 }

@@ -9,6 +9,7 @@ import { sleep } from 'src/utils';
 import { BinanceService } from '../binance/binance.service';
 import { LogService } from '../log/log.service';
 import { TelegramService } from '../telegram/telegram.service';
+import { NewCoinService } from '../new-coin/new-coin.service';
 
 interface BotOrder {
   orderId: number;
@@ -30,6 +31,7 @@ export class BotService {
     private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
+    private readonly newCoinService: NewCoinService,
     private readonly logService: LogService
   ) {
     // setTimeout(() => this.startTest(), 10000);
@@ -135,6 +137,7 @@ export class BotService {
     const { ratioTradeOnce } = this.appEnvironment;
     let useAmount = totalAmount * ratioTradeOnce;
     if (ratioTradeOnce > 1) useAmount = Math.min(ratioTradeOnce, totalAmount);
+    if (this.newCoinService.hasNewCoin()) useAmount = useAmount / 2;
 
     return Math.floor(useAmount);
     // if (totalAmount > 10) return 10;
