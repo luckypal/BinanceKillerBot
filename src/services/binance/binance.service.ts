@@ -75,39 +75,43 @@ export class BinanceService {
     const { ratioTradeNewCoin } = this.appEnvironment;
     const amount = this.spotBalance * ratioTradeNewCoin;
     const sAmount = Math.floor(amount).toString();
+
+    this.logService.blog('Start to buy new coin', Date.now(), coins);
+
     coins.forEach(async newCoin => {
       let count = 0;
-      await sleep(500);
-      while (count < 20) {
-        const { symbol } = newCoin;
-        try {
-          const order = await this.binance.order({
-            symbol,
-            side: OrderSide.BUY,
-            quoteOrderQty: sAmount, // USDT amount
-            type: OrderType.MARKET,
-          });
+      const orderLimit = 25;
+      const { symbol } = newCoin;
+      await sleep(800);
+      this.logService.blog('After sleep...', Date.now(), symbol);
 
-          this.logService.blog('Buy new coin', newCoin, order);
+      while (count < orderLimit) {
+        this.binance.order({
+          symbol,
+          side: OrderSide.BUY,
+          quoteOrderQty: sAmount, // USDT amount
+          type: OrderType.MARKET,
+        }).then(order => {
+          count = orderLimit;
+          this.logService.blog('Buy new coin', newCoin, order, Date.now());
           this.onBuyNewCoin(newCoin);
-          break;
-        } catch (e) {
+        }).catch(e => {
           const { message } = e;
-          console.log(new Date(), newCoin, count, message);
-          // if (message == 'Invalid symbol.') await sleep(1000);
-          await sleep(50 * count / 2);
-          count += 1;
-        }
+          console.log('New coin failed', new Date(), count, symbol, message);
+        });
+        await sleep(20);
+        count += 1;
       }
     });
   }
 
   async onBuyNewCoin(newCoin: NewCoin) {
+    const { symbol } = newCoin;
     this.eventEmitter.emit('binance.newCoin.ordered', newCoin);
-    await sleep(30 * 1000);
+    this.logPrice(symbol, 5);
+    await sleep(5 * 1000);
 
     await this.updateLotSizes();
-    const { symbol } = newCoin;
     const quantity = await this.getBalance(symbol.replace('USDT', ''));
     const sQuantity = this.calculateQuantity(symbol, quantity, 1);
     const sellOrder = await this.binance.order({
@@ -117,6 +121,17 @@ export class BinanceService {
       type: OrderType.MARKET,
     });
     this.logService.blog('Sell new coin', newCoin, sQuantity, sellOrder);
+  }
+
+  async logPrice(symbol: string, second: number) {
+    for (let i = 0; i < second * 10; i++) {
+      this.binance.ws.trades([symbol], trade => {
+        const { price } = trade;
+        console.log('New coin Price', new Date(), symbol, price);
+        this.logService.blog('New coin Price', Date.now(), symbol, price);
+      });
+      await sleep(100);
+    }
   }
 
   setWatchSymbol(symbol) {

@@ -10,6 +10,8 @@ npm run build
 
 pm2 delete Binance-Killer-Bot
 
+pm2 delete Binance-Killer-Bot-cstar
+
 pm2 start pm2/start.json
 
 
@@ -23,7 +25,6 @@ npm install
 
 npm run build
 
-pm2 delete Binance-Killer-Bot-cstar
 
 pm2 start pm2/start-cstar.json
 
