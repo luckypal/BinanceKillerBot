@@ -23,7 +23,7 @@ export class ApiController {
 
   @Get('news')
   getNews() {
-    const newCoins = this.newCoinService.data.filter(({isExist}) => !isExist).join(', ');
+    const newCoins = this.newCoinService.data.filter(({ isExist }) => !isExist).map(({ symbol }) => symbol).join(', ');
     return [
       ...this.newsService.data,
       {

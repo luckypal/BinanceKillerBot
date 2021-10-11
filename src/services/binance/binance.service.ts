@@ -78,7 +78,7 @@ export class BinanceService {
     coins.forEach(async newCoin => {
       let count = 0;
       await sleep(500);
-      while (count < 15) {
+      while (count < 20) {
         const { symbol } = newCoin;
         try {
           const order = await this.binance.order({
@@ -95,7 +95,7 @@ export class BinanceService {
           const { message } = e;
           console.log(new Date(), newCoin, count, message);
           // if (message == 'Invalid symbol.') await sleep(1000);
-          await sleep(80 * count);
+          await sleep(50 * count / 2);
           count += 1;
         }
       }
