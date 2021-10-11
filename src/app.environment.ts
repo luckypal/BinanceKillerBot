@@ -115,4 +115,6 @@ export class AppEnvironment {
   @Env('FRONTEND_SECRET_KEY')
   @IsString()
   readonly frontendSecKey = '';
+
+  readonly buyOrderLiveTime = 24; // Hours.
 }

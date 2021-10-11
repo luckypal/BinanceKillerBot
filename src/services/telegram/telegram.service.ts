@@ -1,4 +1,4 @@
-import moment from 'moment';
+import * as moment from 'moment';
 import { Injectable } from '@nestjs/common';
 import * as MTProto from '@mtproto/core';
 import * as prompts from 'prompts';
@@ -233,16 +233,13 @@ export class TelegramService {
 
   verifySignalData(signal: BKSignal) {
     const {
-      coin,
+      entry,
       terms,
     } = signal;
-    const price = this.binanceService.prices[coin];
-    if (price > Math.min(...terms.short)) {
+    const maxEntry = Math.max(...entry);
+    const minShortTerm = Math.min(...terms.short);
+    if (maxEntry > minShortTerm) {
       this.logService.mlog('Falling-down is not supported');
-      return false;
-    }
-    if (price * 1.1 < Math.min(...terms.short)) {
-      this.logService.mlog('Price-calculation error');
       return false;
     }
     return true;

@@ -358,6 +358,7 @@ export class BinanceService {
     const sStopLoss = stopLoss && stopLoss.toString();
 
     if (leverage == 1) {
+      // Not USE
       if (type == BncOrderType.buy) {
         if (isMarket) {
           return await this.binance.order({
@@ -430,10 +431,16 @@ export class BinanceService {
   }
 
   cancelOrder(symbol: string, orderId: number) {
-    return this.binance.marginCancelOrder({
-      symbol,
-      orderId
-    });
+    try {
+      return this.binance.marginCancelOrder({
+        symbol,
+        orderId,
+        isIsolated: "TRUE"
+      } as any);
+    } catch (e) {
+      console.log('CANCEL ORDER error', e);
+      return null;
+    }
   }
 
   async amountToRepay(symbol: string) {

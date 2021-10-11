@@ -1,3 +1,4 @@
+import * as moment from 'moment';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -34,7 +35,7 @@ export class BotService {
     private readonly newCoinService: NewCoinService,
     private readonly logService: LogService
   ) {
-    // setTimeout(() => this.startTest(), 10000);
+    // setTimeout(() => this.startTest(), 5000);
   }
 
   // async startTest() { }
@@ -74,24 +75,28 @@ export class BotService {
     const { signals } = this.telegramService;
 
     this.orders
-      .filter((order) => (order.status == OrderStatus.NEW))
+      .filter((order) => (order.side == OrderSide.SELL && order.status == OrderStatus.NEW))
       .forEach(async (order) => {
-        const {
-          signalId,
-          symbol,
-          target = 0 } = order;
-        const price = prices[symbol];
-        const {
-          terms } = signals[signalId];
-        const targets = [
-          ...terms.short,
-          ...terms.mid,
-          ...terms.long
-        ];
-        if (target == targets.length - 1) return;
-        if (targets[target] <= price) {
-          order.status = OrderStatus.CANCELED;
-          this.updateSellOrderTarget(order, target);
+        try {
+          const {
+            signalId,
+            symbol,
+            target = 0 } = order;
+          const price = prices[symbol];
+          const {
+            terms } = signals[signalId];
+          const targets = [
+            ...terms.short,
+            ...terms.mid,
+            ...terms.long
+          ];
+          if (target == targets.length - 1) return;
+          if (targets[target] <= price) {
+            order.status = OrderStatus.CANCELED;
+            this.updateSellOrderTarget(order, target);
+          }
+        } catch (e) {
+          console.log('EEEEEEEE', e);
         }
       })
   }
@@ -105,10 +110,22 @@ export class BotService {
         const {
           symbol,
           orderId,
-          side
+          side,
+          order: { createdAt }
         } = order
         const bnOrder = await this.binanceService.getOrder(symbol, orderId, true);
         if (!bnOrder) return;
+
+        if (
+          bnOrder.side == OrderSide.BUY
+          && bnOrder.status == OrderStatus.NEW) {
+          const { buyOrderLiveTime } = this.appEnvironment;
+          const limitLiveTime = createdAt + (buyOrderLiveTime * 60 * 60 * 1000);
+          if (limitLiveTime <= Date.now()) {
+            this.cancelBuyOrder(order);
+          }
+          return;
+        }
         if (bnOrder.status == OrderStatus.NEW
           || bnOrder.status == OrderStatus.PARTIALLY_FILLED) return;
 
@@ -148,6 +165,7 @@ export class BotService {
     const {
       signalId,
       coin: symbol,
+      ote,
       leverage
     } = signal;
     if (!this.appEnvironment.useOffset) await sleep(2000);
@@ -162,18 +180,19 @@ export class BotService {
     const amountToBuyOrder = Math.min(amountToBuy, amountToUse * leverageLevel);
 
     this.logService.blog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse} x ${leverageLevel} = ${amountToBuy} => ${amountToBuyOrder}`);
+    const isBuyMarket = this.isBuyMarket(signal);
 
     const buyOrder: BncOrder = {
       id: '',
       coin: symbol,
       type: BncOrderType.buy,
-      price: 0,
+      price: ote,
       createdAt: Date.now(),
       signalId,
       leverage: leverageLevel,
       status: BncOrderStatus.active,
     };
-    const order = (await this.binanceService.makeOrder(buyOrder, true, amountToBuyOrder)) as Order;
+    const order = (await this.binanceService.makeOrder(buyOrder, isBuyMarket, amountToBuyOrder)) as Order;
     const { orderId } = order;
 
     const botOrder: BotOrder = {
@@ -339,6 +358,37 @@ export class BotService {
     let levStopLoss = Math.max(stopLoss, limit);
     levStopLoss = this.binanceService.filterPrice(coin, levStopLoss);
     return levStopLoss;
+  }
+
+  isBuyMarket(signal: BKSignal) {
+    const {
+      coin,
+      terms,
+    } = signal;
+    const price = this.binanceService.prices[coin];
+    const minShortTerm = Math.min(...terms.short);
+    if (price < minShortTerm) return true;
+    return false;
+  }
+
+  async cancelBuyOrder(order: BotOrder) {
+    console.log('CANCEL', order);
+    const {
+      symbol,
+      orderId,
+      signalId,
+      order: { createdAt }
+    } = order;
+
+    order.status = OrderStatus.EXPIRED;
+    const {
+      timezoneOffset,
+      dateTimeFormat } = this.appEnvironment;
+    const date = moment(createdAt).utcOffset(timezoneOffset).format(dateTimeFormat);
+
+    this.logService.blog(`BUY order is Canceled. ${symbol}#${signalId}#${orderId} createdAt: ${date}`);
+    await this.binanceService.cancelOrder(symbol, orderId);
+    await this.refundToSpot(order);
   }
 
   async refundToSpot(sellOrder: BotOrder) {
