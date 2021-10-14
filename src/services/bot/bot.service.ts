@@ -167,7 +167,7 @@ export class BotService {
     const {
       signalId,
       coin: symbol,
-      ote,
+      entry,
       leverage
     } = signal;
     if (!this.appEnvironment.useOffset) await sleep(2000);
@@ -188,7 +188,7 @@ export class BotService {
       id: '',
       coin: symbol,
       type: BncOrderType.buy,
-      price: ote,
+      price: isBuyMarket ? 0 : Math.max(...entry),
       createdAt: Date.now(),
       signalId,
       leverage: leverageLevel,
@@ -321,8 +321,10 @@ export class BotService {
     const { signalId, price } = buyBncOrder;
     const signal = this.telegramService.signals[signalId];
     const { coin, terms } = signal;
-    let maxSellPrice = price * 1.03;
-    maxSellPrice = Math.min(maxSellPrice, terms.short[0]);
+    // let maxSellPrice = price * 1.03;                   // Strategy - Shortest
+    // maxSellPrice = Math.min(maxSellPrice, terms.short[0]);
+    let maxSellPrice = Math.max(...terms.short);   // Strategy - Shortmax
+
     if (this.appEnvironment.useOffset) {
       maxSellPrice = maxSellPrice * 0.9999;
     }
@@ -355,12 +357,14 @@ export class BotService {
     const {
       coin,
       stopLoss,
+      entry,
       leverage,
     } = signal;
     const levLevel = Math.max(...leverage);
     let limit = price * (1 - 1 / levLevel / 2) * 1.01;
     if (!this.appEnvironment.useOffset) limit *= 1.001;
     let levStopLoss = Math.max(stopLoss, limit);
+    levStopLoss = Math.max(levStopLoss, Math.min(...entry)); // Strategy - minentrystop
     levStopLoss = this.binanceService.filterPrice(coin, levStopLoss);
     return levStopLoss;
   }
