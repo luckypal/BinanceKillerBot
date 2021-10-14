@@ -132,10 +132,10 @@ export class StrategyService {
     Object.values(this.strategies).forEach(strategy => strategy.onUpdatePrices(prices));
   }
 
-  getBalances(total: number, amountBuyOnce: number, excepts: string[]) {
+  getBalances(total: number, amountBuyOnce: number, excepts: string[], days: number) {
     return Object.values(this.strategies).map(strategy => {
       const { strategyId } = strategy;
-      const balances = strategy.getBalances(total, amountBuyOnce, excepts);
+      const balances = strategy.getBalances(total, amountBuyOnce, excepts, days);
       return {
         strategyId,
         ...balances

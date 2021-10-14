@@ -123,7 +123,17 @@ export class AppController {
     const total = await this.binanceService.getUsdtBalance();
     const { ratioTradeOnce } = this.appEnvironment;
     const exceptCoins = [];
-    const data = this.strategyService.getBalances(total, ratioTradeOnce, exceptCoins);
+    const data = this.strategyService.getBalances(total, ratioTradeOnce, exceptCoins, 30);
+    return this.jsonBeautify(data);
+  }
+
+  @Get('balances/:days')
+  async getDefaultBalancesByDays(
+    @Param('days') days: number) {
+    const total = await this.binanceService.getUsdtBalance();
+    const { ratioTradeOnce } = this.appEnvironment;
+    const exceptCoins = [];
+    const data = this.strategyService.getBalances(total, ratioTradeOnce, exceptCoins, days);
     return this.jsonBeautify(data);
   }
 
@@ -133,7 +143,7 @@ export class AppController {
     @Param('buyOnce') buyOnce: number
   ) {
     const exceptCoins = [];
-    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
+    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins, 30);
     return this.jsonBeautify(data);
   }
 
@@ -144,7 +154,7 @@ export class AppController {
     @Param('exceptCoins') _exceptCoins: string
   ) {
     const exceptCoins = _exceptCoins.split(',');
-    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins);
+    const data = this.strategyService.getBalances(total, buyOnce, exceptCoins, 30);
     return this.jsonBeautify(data);
   }
 

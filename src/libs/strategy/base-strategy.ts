@@ -230,7 +230,8 @@ export class BaseStrategy {
   getBalances(
     primaryUsdt: number,
     buyAmount: number,
-    excepts: string[]
+    excepts: string[],
+    days: number
   ) {
     const {
       timezoneOffset,
@@ -243,6 +244,7 @@ export class BaseStrategy {
     const { prices } = this.binanceService;
     const usdts = {};
     const amounts: Record<number | string, BaseAmount> = {};
+    const limitDate = Date.now() - days * 60 * 60 * 24 * 1000;
 
     Object.values(this.orders)
     .sort((a, b) => {
@@ -264,6 +266,7 @@ export class BaseStrategy {
         createdAt,
         closedAt
       } = order;
+      if (createdAt < limitDate) return;
       if (excepts.includes(coin)) return;
       if (!balances[coin]) balances[coin] = 0;
       if (
@@ -301,6 +304,10 @@ export class BaseStrategy {
     for (const coin in balances) {
       const price = prices[coin];
       if (!price) continue;
+      if (balances[coin] == 0) {
+        delete balances[coin];
+        continue;
+      }
       totalBalance += price * balances[coin];
       usdts[coin] = price * balances[coin];
     }
@@ -311,8 +318,8 @@ export class BaseStrategy {
         SPOT: balances.SPOT,
         LOAN: balances.LOAN,
       },
-      // USDT: usdts,
-      // coins: balances,
+      USDT: usdts,
+      coins: balances,
       amounts
     };
   }

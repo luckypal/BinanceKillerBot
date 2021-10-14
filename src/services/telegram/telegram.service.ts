@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+// import * as moment from 'moment';
 import { Injectable } from '@nestjs/common';
 import * as MTProto from '@mtproto/core';
 import * as prompts from 'prompts';
@@ -196,8 +196,8 @@ export class TelegramService {
       try {
         this.processMessage(msgContent, parser);
 
-        const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
-        console.log(date, message);
+        // const date = moment().utcOffset(-5).format('YYYY-MM-DD HH:mm:ss');
+        // console.log(date, message.message);
       } catch (e) {
         this.logService.log('PROCESSING MESSAGE ERROR', e);
       }
