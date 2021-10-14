@@ -283,7 +283,7 @@ export class BaseStrategy {
           from: amount,
           start: moment(createdAt).utcOffset(timezoneOffset).format(dateTimeFormat),
         };
-      } else {
+      } else if (amounts[signalId]) {
         let sellPrice = price;
         if (status == BncOrderStatus.stopLess) sellPrice = stopLoss;
 

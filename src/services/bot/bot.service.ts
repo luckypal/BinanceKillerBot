@@ -11,6 +11,7 @@ import { BinanceService } from '../binance/binance.service';
 import { LogService } from '../log/log.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { NewCoinService } from '../new-coin/new-coin.service';
+import { StrategyService } from '../strategy/strategy.service';
 
 interface BotOrder {
   orderId: number;
@@ -22,18 +23,21 @@ interface BotOrder {
   signalId: number | string;
   order: BncOrder;
   target?: number;
+  strategy: string;
 }
 
 @Injectable()
 export class BotService {
   orders: BotOrder[] = [];
+  currentStrategy = '';
 
   constructor(
     private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private readonly telegramService: TelegramService,
     private readonly newCoinService: NewCoinService,
-    private readonly logService: LogService
+    private readonly logService: LogService,
+    private readonly strategyService: StrategyService
   ) {
     // setTimeout(() => this.startTest(), 5000);
   }
@@ -164,6 +168,7 @@ export class BotService {
   }
 
   async buy(signal: BKSignal): Promise<BotOrder> {
+    this.getBestStrategy();
     const {
       signalId,
       coin: symbol,
@@ -188,7 +193,7 @@ export class BotService {
       id: '',
       coin: symbol,
       type: BncOrderType.buy,
-      price: isBuyMarket ? 0 : Math.max(...entry),
+      price: this.getBuyPrice(signal),
       createdAt: Date.now(),
       signalId,
       leverage: leverageLevel,
@@ -205,7 +210,8 @@ export class BotService {
       status: OrderStatus.NEW,
 
       signalId,
-      order: buyOrder
+      order: buyOrder,
+      strategy: this.currentStrategy
     };
     this.orders.push(botOrder);
     this.logService.blog(`Buy ORDER ${symbol}#${orderId} is created.`, amountToBuy, order);
@@ -213,6 +219,7 @@ export class BotService {
   }
 
   async sell(buyOrder: BotOrder): Promise<BotOrder> {
+    this.getBestStrategy();
     const {
       symbol,
       signalId,
@@ -253,7 +260,8 @@ export class BotService {
 
       signalId,
       order: sellOrder,
-      target: 0
+      target: 0,
+      strategy: this.currentStrategy
     };
     this.orders.push(botOrder);
     this.logService.blog(`SELL ORDER ${symbol}#${orderId} is created.`, amountToSell, order);
@@ -311,29 +319,42 @@ export class BotService {
 
       signalId,
       order: sellOrder,
-      target: target + 1
+      target: target + 1,
+      strategy: orgOrder.strategy
     };
     this.orders.push(botOrder);
     this.logService.blog(`SELL ORDER ${symbol}#${newOrderId} is recreated.`, amountToSell, newSellOrder);
   }
 
+  getBuyPrice(signal: BKSignal) {
+    const method = this.currentStrategy;
+    const {
+      coin: symbol
+    } = signal;
+    const price = this.binanceService.prices[symbol];
+    if (method.indexOf('otebuy') >= 0) return signal.ote;
+    if (method.indexOf('minentrybuy') >= 0) return Math.min(...signal.entry);
+    return price;
+  }
+
   getSellPrice(buyBncOrder: BncOrder) {
-    const { signalId, price } = buyBncOrder;
+    const { signalId } = buyBncOrder;
     const signal = this.telegramService.signals[signalId];
-    const { coin, terms } = signal;
-    // let maxSellPrice = price * 1.03;                   // Strategy - Shortest
-    // maxSellPrice = Math.min(maxSellPrice, terms.short[0]);
-    let maxSellPrice = Math.max(...terms.short);   // Strategy - Shortmax
+    const { coin } = signal;
+    const method = this.currentStrategy;
+    let sellPrice = signal.terms.short[0];
+
+    if (method.indexOf('shortest') >= 0) sellPrice = signal.terms.short[0];
+    if (method.indexOf('shortmax') >= 0) sellPrice = Math.max(...signal.terms.short);
+    if (method.indexOf('midest') >= 0) sellPrice = Math.max(...signal.terms.short, Math.min(...signal.terms.mid));
+    if (method.indexOf('midmax') >= 0) sellPrice = Math.max(...signal.terms.mid);
+    if (method.indexOf('longest') >= 0) sellPrice = Math.max(...signal.terms.mid, ...signal.terms.long);
 
     if (this.appEnvironment.useOffset) {
-      maxSellPrice = maxSellPrice * 0.9999;
+      sellPrice = sellPrice * 0.9999;
     }
-    maxSellPrice = this.binanceService.filterPrice(coin, maxSellPrice);
-    return maxSellPrice;
-    // const { dailyChangePercent } = this.binanceService;
-    // if (dailyChangePercent < 0)
-    //   return Math.min(...signal.terms.short, ...signal.terms.mid);
-    // return signal.terms.short[1];
+    sellPrice = this.binanceService.filterPrice(coin, sellPrice);
+    return sellPrice;
   }
 
   getMaxSellPrice(buyBncOrder: BncOrder) {
@@ -350,19 +371,20 @@ export class BotService {
   }
 
   getStopLossPrice(signal: BKSignal, price: number) {
-    // const { dailyChangePercent } = this.binanceService;
-    // if (dailyChangePercent < 0)
-    //   return Math.min(...signal.entry);
-
     const {
       coin,
-      stopLoss,
       entry,
       leverage,
     } = signal;
     const levLevel = Math.max(...leverage);
     let limit = price * (1 - 1 / levLevel / 2) * 1.01;
     if (!this.appEnvironment.useOffset) limit *= 1.001;
+
+    const method = this.currentStrategy;
+    let stopLoss = signal.stopLoss;
+    if (method.indexOf('orgstop') >= 0) stopLoss = signal.stopLoss;
+    if (method.indexOf('minentrystop') >= 0) stopLoss = Math.min(...signal.entry) * 0.99;
+
     let levStopLoss = Math.max(stopLoss, limit);
     levStopLoss = Math.max(levStopLoss, Math.min(...entry)); // Strategy - minentrystop
     levStopLoss = this.binanceService.filterPrice(coin, levStopLoss);
@@ -376,8 +398,9 @@ export class BotService {
     } = signal;
     const price = this.binanceService.prices[coin];
     const minShortTerm = Math.min(...terms.short);
-    if (price < minShortTerm) return true;
-    return false;
+    if (price < minShortTerm) return false;
+
+    return this.currentStrategy.indexOf("urgentbuy") >= 0;
   }
 
   async cancelBuyOrder(order: BotOrder) {
@@ -408,5 +431,15 @@ export class BotService {
     await sleep(5000);
     const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol);
     this.logService.blog(`MARGIN2SPOT ${symbol}#${signalId} $${amountToTransfer.quote}, #${amountToTransfer.base}`);
+  }
+
+  getBestStrategy() {
+    const { spotBalance } = this.binanceService;
+    const { ratioTradeOnce } = this.appEnvironment;
+    const exceptCoins = [];
+    const data = this.strategyService.getBalances(spotBalance, ratioTradeOnce, exceptCoins, 3);
+    const { strategyId } = data[0];
+    this.currentStrategy = strategyId;
+    return strategyId;
   }
 }
