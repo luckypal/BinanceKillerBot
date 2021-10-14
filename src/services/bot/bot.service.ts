@@ -394,11 +394,11 @@ export class BotService {
   isBuyMarket(signal: BKSignal) {
     const {
       coin,
-      terms,
+      entry
     } = signal;
     const price = this.binanceService.prices[coin];
-    const minShortTerm = Math.min(...terms.short);
-    if (price < minShortTerm) return false;
+    const maxEntry = Math.min(...entry);
+    if (maxEntry < price) return false;
 
     return this.currentStrategy.indexOf("urgentbuy") >= 0;
   }
