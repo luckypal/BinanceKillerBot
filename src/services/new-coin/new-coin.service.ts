@@ -3,6 +3,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import { EventEmitter2 } from 'eventemitter2';
+import { AppEnvironment } from 'src/app.environment';
 import { NewCoin } from 'src/models/new-coin';
 import { BinanceArticle } from 'src/models/news';
 import { BinanceService } from '../binance/binance.service';
@@ -14,6 +15,7 @@ export class NewCoinService {
   URL_BINANCE_ARTICLE = 'https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=48&pageNo=1&pageSize=15';
 
   constructor(
+    private readonly appEnvironment: AppEnvironment,
     private readonly binanceService: BinanceService,
     private eventEmitter: EventEmitter2,
   ) { }
@@ -26,6 +28,9 @@ export class NewCoinService {
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   getBinanceArticle() {
+    const { isRunSniper } = this.appEnvironment;
+    if (!isRunSniper) return;
+
     axios.get(this.URL_BINANCE_ARTICLE)
       .then(({ data: { data: { articles } } }: { data: { data: { articles: BinanceArticle[] } } }) => {
         this.checkNewCoins(articles);

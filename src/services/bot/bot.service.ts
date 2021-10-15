@@ -46,6 +46,9 @@ export class BotService {
 
   @OnEvent('telegram.onSignal')
   async onNewSignal(signal: BKSignal) {
+    const { isRunBkBot } = this.appEnvironment;
+    if (!isRunBkBot) return;
+
     this.logService.blog('NEW SIGNAL', signal);
     if (signal.terms.short[0] != Math.min(...signal.terms.short)) {
       this.logService.blog('Falling with margin is not supported yet.');
@@ -62,6 +65,7 @@ export class BotService {
 
     const { coin } = signal;
     const { coinExceptions } = this.appEnvironment;
+
     if (coinExceptions.indexOf(coin) != -1) {
       this.logService.blog(`${coin} is in Exceptional list.`);
       return;

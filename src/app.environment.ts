@@ -119,4 +119,20 @@ export class AppEnvironment {
   readonly buyOrderLiveTime = 24; // Hours.
 
   readonly isUseStepping = false; // Stepping stop loss
+
+  @Env('IS_RUN_BKBOT')
+  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 0)
+  @IsNumber()
+  readonly isRunBkBot = 0;
+
+  @Env('IS_RUN_SNIPER')
+  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 1)
+  @IsNumber()
+  readonly isRunSniper = 1;
+
+  @Env('IS_RUN_BIBOT')
+  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 1)
+  @IsNumber()
+  readonly isRunBiBot = 1;
+  
 }

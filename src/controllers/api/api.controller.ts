@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppEnvironment } from 'src/app.environment';
+import { BISignal } from 'src/models/bi-signal';
 import { News, NewsSource } from 'src/models/news';
 
 import { BinanceService } from 'src/services/binance/binance.service';
@@ -42,5 +43,10 @@ export class ApiController {
     return {
       result: secretKey === frontendSecKey
     };
+  }
+
+  @Post('bisignal')
+  onNewBISignal(@Body() signal: BISignal) {
+    console.log(signal);
   }
 }
