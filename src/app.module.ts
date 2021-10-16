@@ -17,6 +17,7 @@ import { ApiController } from './controllers/api/api.controller';
 import { PriceGateway } from './modules/price/price.gateway';
 import { NewsService } from './services/news/news.service';
 import { NewCoinService } from './services/new-coin/new-coin.service';
+import { BibotService } from './services/bibot/bibot.service';
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { NewCoinService } from './services/new-coin/new-coin.service';
     BotService,
     PriceGateway,
     NewsService,
-    NewCoinService
+    NewCoinService,
+    BibotService
   ],
 })
 export class AppModule { }
