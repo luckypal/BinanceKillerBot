@@ -27,7 +27,6 @@ export class LogService {
 
   getMessage(msg) {
     const {
-      isDevelopment,
       timezoneOffset,
       dateTimeFormat } = this.appEnvironment;
     const date = moment().utcOffset(timezoneOffset).format(dateTimeFormat);
@@ -38,7 +37,6 @@ export class LogService {
       return value;
     }).join('  \n  ');
     const data = `${date}  ${messages}\n\n`;
-    if (isDevelopment()) console.log(data);
     return data;
   }
 
@@ -59,6 +57,7 @@ export class LogService {
 
   bilog(...msg) {
     const data = this.getMessage(msg);
+    if (this.appEnvironment.isDevelopment()) console.log(data);
     fs.appendFileSync(this.biFilePath, data, { encoding: 'utf8' });
   }
 

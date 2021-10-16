@@ -22,9 +22,7 @@ export class BibotService {
     private readonly appEnvironment: AppEnvironment,
     private readonly logService: LogService,
     private readonly binanceService: BinanceService,
-  ) {
-    // setTimeout(() => this.startTest(), 5000);
-  }
+  ) { }
 
   @OnEvent('bibot.onSignal')
   onNewSignal(signals: BISignal[]) {
@@ -69,11 +67,13 @@ export class BibotService {
     const { biRankLimit } = this.appEnvironment;
     const {
       direction,
-      rank
+      rank,
+      dailyProfit
     } = signal;
 
     // Check under rank signal
-    if (rank > biRankLimit && direction === BIDirection.LONG) return;
+    if (direction === BIDirection.LONG
+      && (rank > biRankLimit || dailyProfit <= 1)) return;
 
     if (direction == BIDirection.LONG) this.buy(signal);
     else this.forceSell(signal);
@@ -190,6 +190,7 @@ export class BibotService {
       price } = signal;
     const sellPrice = parseFloat(price);
     const sellOrders = this.orders.filter(order => order.symbol == symbol && order.side == OrderSide.SELL);
+    if (sellOrders.length == 0) return;
 
     this.logService.bilog(`SELL ORDERS are cancelled.`, sellOrders.map(order => order.orderId).join(','));
 
