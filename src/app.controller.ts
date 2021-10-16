@@ -81,6 +81,14 @@ export class AppController {
     this.logService.streamLog(filePath, res);
   }
 
+  @Get('bilogs')
+  @HttpCode(201)
+  @Header('Content-Type', '	text/html')
+  getIndicatorLogs(@Res() res) {
+    const { biFilePath: filePath } = this.logService;
+    this.logService.streamLog(filePath, res);
+  }
+
   @Get('signals')
   getSignals() {
     const {

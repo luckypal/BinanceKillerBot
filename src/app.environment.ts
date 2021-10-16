@@ -134,5 +134,7 @@ export class AppEnvironment {
   @Transform(({ value }) => value ? Number.parseInt(value, 10) : 1)
   @IsNumber()
   readonly isRunBiBot = 1;
-  
+
+  readonly biRankLimit = 5;
+  readonly biLeverage = 5;
 }

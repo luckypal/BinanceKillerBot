@@ -13,6 +13,7 @@ export class LogService {
   filePath = '';
   bFilePath = '';
   mFilePath = '';
+  biFilePath = '';
 
   constructor(
     private readonly appEnvironment: AppEnvironment
@@ -21,10 +22,12 @@ export class LogService {
     this.filePath = `${logFileDir}/logs.txt`;
     this.bFilePath = `${logFileDir}/bot_logs.txt`;
     this.mFilePath = `${logFileDir}/msg_logs.txt`;
+    this.biFilePath = `${logFileDir}/bi_signals.txt`;
   }
 
   getMessage(msg) {
     const {
+      isDevelopment,
       timezoneOffset,
       dateTimeFormat } = this.appEnvironment;
     const date = moment().utcOffset(timezoneOffset).format(dateTimeFormat);
@@ -35,6 +38,7 @@ export class LogService {
       return value;
     }).join('  \n  ');
     const data = `${date}  ${messages}\n\n`;
+    if (isDevelopment()) console.log(data);
     return data;
   }
 
@@ -51,6 +55,11 @@ export class LogService {
   mlog(...msg) {
     const data = this.getMessage(msg);
     fs.appendFileSync(this.mFilePath, data, { encoding: 'utf8' });
+  }
+
+  bilog(...msg) {
+    const data = this.getMessage(msg);
+    fs.appendFileSync(this.biFilePath, data, { encoding: 'utf8' });
   }
 
   streamLog(filePath, res) {

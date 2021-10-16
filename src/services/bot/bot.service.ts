@@ -5,26 +5,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { MarginOcoOrder, Order, OrderSide, OrderStatus, OrderStatus_LT } from 'binance-api-node';
 import { AppEnvironment } from 'src/app.environment';
 import { BKSignal } from 'src/models/bk-signal';
-import { BncOrder, BncOrderStatus, BncOrderType } from 'src/models/bnc-order';
+import { BncOrder, BncOrderStatus, BncOrderType, BotOrder } from 'src/models/bnc-order';
 import { sleep } from 'src/utils';
 import { BinanceService } from '../binance/binance.service';
 import { LogService } from '../log/log.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { NewCoinService } from '../new-coin/new-coin.service';
 import { StrategyService } from '../strategy/strategy.service';
-
-interface BotOrder {
-  orderId: number;
-  symbol: string;
-  isIsolated: "TRUE" | "FALSE" | boolean;
-  side: OrderSide;
-  status: OrderStatus_LT;
-
-  signalId: number | string;
-  order: BncOrder;
-  target?: number;
-  strategy: string;
-}
 
 @Injectable()
 export class BotService {
@@ -176,7 +163,6 @@ export class BotService {
     const {
       signalId,
       coin: symbol,
-      entry,
       leverage
     } = signal;
     if (!this.appEnvironment.useOffset) await sleep(2000);
@@ -433,7 +419,7 @@ export class BotService {
       symbol
     } = sellOrder;
     await sleep(5000);
-    const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol);
+    const amountToTransfer = await this.binanceService.transferMarginToSpot(symbol, true);
     this.logService.blog(`MARGIN2SPOT ${symbol}#${signalId} $${amountToTransfer.quote}, #${amountToTransfer.base}`);
   }
 

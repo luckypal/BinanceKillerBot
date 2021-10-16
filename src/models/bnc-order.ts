@@ -1,3 +1,5 @@
+import { OrderSide, OrderStatus_LT } from "binance-api-node";
+
 export enum BncOrderType {
   buy = 0,
   sell = 1,
@@ -43,4 +45,17 @@ export interface BncOrder {
   createdAt: number;
 
   closedAt?: number;
+}
+
+export interface BotOrder {
+  orderId: number;
+  symbol: string;
+  isIsolated: "TRUE" | "FALSE" | boolean;
+  side: OrderSide;
+  status: OrderStatus_LT;
+
+  signalId: number | string;
+  order: BncOrder;
+  target?: number;
+  strategy?: string;
 }

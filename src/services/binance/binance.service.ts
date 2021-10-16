@@ -12,7 +12,7 @@ import { NewCoin } from 'src/models/new-coin';
 
 @Injectable()
 export class BinanceService {
-  binance: Binance = null;
+  public binance: Binance = null;
   lotSizes: Record<string, number> = {};
   priceFilters: Record<string, number> = {};
   dailyStats: DailyStatsResult[] = [];
@@ -236,9 +236,6 @@ export class BinanceService {
     amount: number,
     retry: number
   ) {
-    // const balance = await this.getUsdtBalance();
-    // if (balance < amount) return 0;
-
     if (retry == 3) {
       try {
         await this.binance.enableMarginAccount({ symbol });
@@ -281,6 +278,7 @@ export class BinanceService {
    */
   async transferMarginToSpot(
     symbol: string,
+    isDisablePair: boolean
   ) {
     const isolatedAccount = await this.binance.marginIsolatedAccount({ symbols: symbol });
     let {
@@ -319,7 +317,9 @@ export class BinanceService {
       });
     }
 
-    await this.binance.disableMarginAccount({ symbol });
+    if (isDisablePair) {
+      await this.binance.disableMarginAccount({ symbol });
+    }
 
     return {
       quote: quote_amountToTransfer,
@@ -428,20 +428,31 @@ export class BinanceService {
           });
         }
       } else {
-        const quantity = this.calculateQuantity(symbol, amount, 1);
-        const stopLossLimitPrice = this.filterPrice(symbol, stopLoss * 0.999);
+        if (isMarket) {
+          return await this.binance.marginOrder({
+            symbol,
+            isIsolated: "TRUE",
+            side: OrderSide.SELL,
+            type: OrderType.MARKET,
+            sideEffectType: SideEffectType.AUTO_REPAY,
+            quoteOrderQty: sAmount, // USDT amount
+          })
+        } else {
+          const quantity = this.calculateQuantity(symbol, amount, 1);
+          const stopLossLimitPrice = this.filterPrice(symbol, stopLoss * 0.999);
 
-        return await this.binance.marginOrderOco({
-          symbol,
-          isIsolated: 'TRUE',
-          side: OrderSide.SELL,
-          type: OrderType.STOP_LOSS_LIMIT,
-          sideEffectType: SideEffectType.AUTO_REPAY,
-          price: sPrice,
-          quantity,
-          stopPrice: sStopLoss,
-          stopLimitPrice: stopLossLimitPrice.toString(),
-        })
+          return await this.binance.marginOrderOco({
+            symbol,
+            isIsolated: 'TRUE',
+            side: OrderSide.SELL,
+            type: OrderType.STOP_LOSS_LIMIT,
+            sideEffectType: SideEffectType.AUTO_REPAY,
+            price: sPrice,
+            quantity,
+            stopPrice: sStopLoss,
+            stopLimitPrice: stopLossLimitPrice.toString(),
+          });
+        }
       }
     }
   }
