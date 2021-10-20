@@ -76,14 +76,14 @@ export class BinanceService {
     const amount = this.spotBalance * ratioTradeNewCoin;
     const sAmount = Math.floor(amount).toString();
 
-    this.logService.blog('Start to buy new coin', Date.now(), coins);
+    // this.logService.blog('Start to buy new coin', Date.now(), coins);
 
     coins.forEach(async newCoin => {
       let count = 0;
       const orderLimit = 25;
       const { symbol } = newCoin;
       await sleep(800);
-      this.logService.blog('After sleep...', Date.now(), symbol);
+      // this.logService.blog('After sleep...', Date.now(), symbol);
 
       while (count < orderLimit) {
         this.binance.order({
@@ -96,8 +96,8 @@ export class BinanceService {
           this.logService.blog('Buy new coin', newCoin, order, Date.now());
           this.onBuyNewCoin(newCoin);
         }).catch(e => {
-          const { message } = e;
-          console.log('New coin failed', new Date(), count, symbol, message);
+          // const { message } = e;
+          // console.log('New coin failed', new Date(), count, symbol, message);
         });
         await sleep(20);
         count += 1;
@@ -267,6 +267,10 @@ export class BinanceService {
       return this.transferSpotToMargin(symbol, amount, retry - 1);
     }
 
+    return this.getIsolatedFreeAmount(symbol);
+  }
+
+  async getIsolatedFreeAmount(symbol: string) {
     const { free } = (await this.binance.marginIsolatedAccount({ symbols: symbol })).assets[0].quoteAsset;
     const { amount: maxBorrow } = await this.binance.marginMaxBorrow({ asset: 'USDT', isolatedSymbol: symbol });
     return parseFloat(free) + parseFloat(maxBorrow);
@@ -429,13 +433,14 @@ export class BinanceService {
         }
       } else {
         if (isMarket) {
+          const quantity = this.calculateQuantity(symbol, amount, 1);
           return await this.binance.marginOrder({
             symbol,
             isIsolated: "TRUE",
             side: OrderSide.SELL,
             type: OrderType.MARKET,
             sideEffectType: SideEffectType.AUTO_REPAY,
-            quoteOrderQty: sAmount, // USDT amount
+            quantity, // USDT amount
           })
         } else {
           const quantity = this.calculateQuantity(symbol, amount, 1);

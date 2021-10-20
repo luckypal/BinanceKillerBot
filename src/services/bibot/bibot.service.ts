@@ -26,9 +26,16 @@ export class BibotService {
 
   @OnEvent('bibot.onSignal')
   onNewSignal(signals: BISignal[]) {
-    this.logService.bilog(signals);
-
-    signals.forEach(signal => this.processSignal(signal));
+    const { indicatorSymbol } = this.appEnvironment;
+    signals.forEach(async signal => {
+      const { symbol } = signal;
+      if (symbol != indicatorSymbol) return;
+      try {
+        await this.processSignal(signal);
+      } catch (e) {
+        console.log(e);
+      }
+    });
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -52,10 +59,14 @@ export class BibotService {
         order.order.closedAt = Date.now();
         this.logService.bilog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
 
-        if (side == OrderSide.BUY) this.sell(order);
-        else {
-          this.removeOrder(symbol);
-          this.refundToSpot(order);
+        if (bnOrder.status == OrderStatus.FILLED) {
+          if (side == OrderSide.BUY) {
+            this.removeOrder(symbol);
+            this.sell(order);
+          } else {
+            this.removeOrder(symbol);
+            // this.refundToSpot(order);
+          }
         }
       } catch (e) {
         this.logService.bilog('ERROR', e);
@@ -64,19 +75,31 @@ export class BibotService {
   }
 
   async processSignal(signal: BISignal) {
-    const { biRankLimit } = this.appEnvironment;
+    // const { biRankLimit } = this.appEnvironment;
     const {
+      symbol,
       direction,
-      rank,
-      dailyProfit
+      // rank,
+      // dailyProfit
     } = signal;
 
     // Check under rank signal
-    if (direction === BIDirection.LONG
-      && (rank > biRankLimit || dailyProfit <= 1)) return;
+    // if (direction === BIDirection.LONG
+    //   && (rank > biRankLimit || dailyProfit <= 1)) return;
 
-    if (direction == BIDirection.LONG) this.buy(signal);
-    else this.forceSell(signal);
+    this.logService.bilog(`NEW ${direction} SIGNAL`, signal);
+    if (direction == BIDirection.LONG) {
+      const existOrder = this.orders.find((order) => order.symbol == symbol);
+      if (!existOrder) {
+        this.buy(signal);
+        return;
+      }
+      this.updateSell(existOrder, signal);
+    } else {
+      const existOrder = this.orders.find((order) => order.symbol == symbol);
+      if (!existOrder) return;
+      this.forceSell(signal);
+    }
   }
 
   async buy(signal: BISignal) {
@@ -90,23 +113,24 @@ export class BibotService {
     } = signal;
 
     if (!useOffset) await sleep(2000);
+
     const amountToUse = await this.amountToUse();
     let amountToBuy = 0;
 
     try {
-      amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
+      amountToBuy = await this.binanceService.getIsolatedFreeAmount(symbol); // await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
     } catch (e) {
-      console.log(e);
-      try {
-        await this.removeLastPair(symbol);
-        amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
-      } catch (e) {
-        this.logService.bilog('Can not open margin trading pair', signalId, symbol);
-        return;
-      }
+      // console.log(e);
+      // try {
+      //   await this.removeLastPair(symbol);
+      //   amountToBuy = await this.binanceService.transferSpotToMargin(symbol, amountToUse, 3);
+      // } catch (e) {
+      //   this.logService.bilog('Can not open margin trading pair', signalId, symbol);
+      //   return;
+      // }
     }
 
-    this.addTradingPair(symbol);
+    // this.addTradingPair(symbol);
     const amountToBuyOrder = Math.min(amountToBuy, amountToUse * biLeverage);
 
     this.logService.bilog(`SPOT2MARGIN ${symbol}#${signalId} $${amountToUse} x ${biLeverage} = ${amountToBuy} => ${amountToBuyOrder}`);
@@ -147,8 +171,7 @@ export class BibotService {
     const { biLeverage } = this.appEnvironment;
 
     const buyPrice = buyBncOrder.price;
-    const sellPrice = buyPrice * 1.01;
-
+    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * 1.01);
     const stopLossPrice = this.binanceService.filterPrice(symbol, buyPrice * 0.91);
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
@@ -182,8 +205,60 @@ export class BibotService {
     return botOrder;
   }
 
-  async forceSell(signal: BISignal) {
+  async updateSell(orgOrder: BotOrder, signal: BISignal) {
+    const {
+      symbol,
+      id: signalId,
+      price
+    } = signal;
+    try {
+      await this.binanceService.cancelOrder(symbol, orgOrder.orderId);
+      this.logService.bilog(`SELL ORDER ${symbol}#${orgOrder.orderId} is closed to update with new signal.`, orgOrder);
+    } catch (e) { }
+
+    this.removeOrder(symbol);
     const { biLeverage } = this.appEnvironment;
+
+    const buyPrice = parseFloat(price);
+    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * 1.01);
+    const stopLossPrice = this.binanceService.filterPrice(symbol, buyPrice * 0.91);
+    const amountToSell = await this.binanceService.amountToRepay(symbol);
+
+    const sellOrder: BncOrder = {
+      id: '',
+      coin: symbol,
+      type: BncOrderType.sell,
+      price: sellPrice,
+      createdAt: Date.now(),
+      signalId,
+      leverage: biLeverage,
+      status: BncOrderStatus.active,
+      stopLoss: stopLossPrice,
+    };
+    const order = (await this.binanceService.makeOrder(sellOrder, false, amountToSell)) as MarginOcoOrder;
+    const { orderId } = order.orderReports[0];
+
+    const botOrder: BotOrder = {
+      orderId,
+      symbol,
+      isIsolated: "TRUE",
+      side: OrderSide.SELL,
+      status: OrderStatus.NEW,
+
+      signalId,
+      order: sellOrder,
+      target: 0,
+    };
+    this.orders.push(botOrder);
+    this.logService.bilog(`SELL ORDER ${symbol}#${orderId} is updated.`, amountToSell, order);
+    return botOrder;
+  }
+
+  async forceSell(signal: BISignal) {
+    const {
+      biLeverage,
+      useOffset
+    } = this.appEnvironment;
     const {
       id: signalId,
       symbol,
@@ -194,10 +269,13 @@ export class BibotService {
 
     this.logService.bilog(`SELL ORDERS are cancelled.`, sellOrders.map(order => order.orderId).join(','));
 
-    await Promise.all(
-      sellOrders.map(({ orderId }) => this.binanceService.cancelOrder(symbol, orderId))
-    );
-    await sleep(1000);
+    try {
+      await Promise.all(
+        sellOrders.map(({ orderId }) => this.binanceService.cancelOrder(symbol, orderId))
+      );
+    } catch (e) { }
+
+    if (!useOffset) await sleep(2000);
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
     const sellOrder: BncOrder = {
@@ -211,8 +289,8 @@ export class BibotService {
       status: BncOrderStatus.active,
       stopLoss: 0,
     };
-    const order = (await this.binanceService.makeOrder(sellOrder, true, amountToSell)) as MarginOcoOrder;
-    const { orderId } = order.orderReports[0];
+    const order = (await this.binanceService.makeOrder(sellOrder, true, amountToSell)) as Order;
+    const { orderId } = order;
     this.logService.bilog(`MARKET SELL ORDER ${symbol}#${orderId} is created.`, amountToSell, order);
     this.removeOrder(symbol);
 
@@ -235,6 +313,7 @@ export class BibotService {
   }
 
   async amountToUse() {
+    return 100;
     const totalAmount = await this.binanceService.getUsdtBalance();
     const ratioTradeOnce = 100;
     let useAmount = totalAmount * ratioTradeOnce;
@@ -276,6 +355,7 @@ export class BibotService {
     let lastPair = this.activePairs[len - 1];
     if (lastPair.symbol == neededSymbol) lastPair = this.activePairs[len - 2];
 
+    this.logService.bilog(`Trading pair ${lastPair.symbol} is closed for ${neededSymbol}`);
     try {
       await this.binanceService.binance.disableMarginAccount({ symbol: lastPair.symbol });
     } catch (e) {

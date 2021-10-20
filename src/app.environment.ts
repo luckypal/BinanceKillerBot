@@ -126,7 +126,7 @@ export class AppEnvironment {
   readonly isRunBkBot = 0;
 
   @Env('IS_RUN_SNIPER')
-  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 1)
+  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 0)
   @IsNumber()
   readonly isRunSniper = 1;
 
@@ -135,6 +135,10 @@ export class AppEnvironment {
   @IsNumber()
   readonly isRunBiBot = 1;
 
-  readonly biRankLimit = 5;
+  readonly biRankLimit = 5; // Not use
   readonly biLeverage = 5;
+
+  @Env('INDICATOR_SYMBOL')
+  @IsString()
+  readonly indicatorSymbol = 'XRPUSDT';
 }
