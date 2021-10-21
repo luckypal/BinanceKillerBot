@@ -139,6 +139,12 @@ export class AppEnvironment {
   readonly biLeverage = 5;
 
   @Env('INDICATOR_SYMBOL')
-  @IsString()
-  readonly indicatorSymbol = 'XRPUSDT';
+  @Transform(({ value }) => value ? value.split(',') : [])
+  @IsArray()
+  readonly indicatorSymbol: string[] = [];
+
+  @Env('INDICATOR_TRADE_ONCE')
+  @Transform(({ value }) => value ? Number.parseFloat(value) : 100)
+  @IsNumber()
+  readonly indicatorTradeOnce = 100;
 }

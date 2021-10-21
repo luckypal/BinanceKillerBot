@@ -29,7 +29,7 @@ export class BibotService {
     const { indicatorSymbol } = this.appEnvironment;
     signals.forEach(async signal => {
       const { symbol } = signal;
-      if (symbol != indicatorSymbol) return;
+      if (indicatorSymbol.indexOf(symbol) == -1) return;
       try {
         await this.processSignal(signal);
       } catch (e) {
@@ -313,7 +313,8 @@ export class BibotService {
   }
 
   async amountToUse() {
-    return 100;
+    const { indicatorTradeOnce } = this.appEnvironment;
+    return indicatorTradeOnce;
     const totalAmount = await this.binanceService.getUsdtBalance();
     const ratioTradeOnce = 100;
     let useAmount = totalAmount * ratioTradeOnce;
