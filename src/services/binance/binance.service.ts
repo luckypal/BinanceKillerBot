@@ -24,6 +24,7 @@ export class BinanceService {
   public watchTrade = null;
 
   spotBalance = 0;
+  spotBnbBalance = 0;
 
   constructor(
     private readonly appEnvironment: AppEnvironment,
@@ -65,25 +66,33 @@ export class BinanceService {
     await this.getLotSizes();
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_MINUTE)
   async updateBalance() {
     this.spotBalance = await this.getUsdtBalance();
+    this.spotBnbBalance = await this.getBalance('BNB');
   }
 
   @OnEvent('binance.newcoin')
   async buyNewCoin(coins: NewCoin[]) {
     const { ratioTradeNewCoin } = this.appEnvironment;
-    const amount = this.spotBalance * ratioTradeNewCoin;
-    const sAmount = Math.floor(amount).toString();
 
-    // this.logService.blog('Start to buy new coin', Date.now(), coins);
+    this.logService.blog('Start to buy new coin', Date.now(), coins);
 
     coins.forEach(async newCoin => {
+      let amount;
+      const { symbol } = newCoin;
+      if (symbol.endsWith('USDT')) amount = this.spotBalance * ratioTradeNewCoin;
+      else if (symbol.endsWith('BNB')) amount = this.spotBnbBalance * ratioTradeNewCoin;
+      else return;
+
+      let sAmount = '0';
+      if (symbol.endsWith('USDT')) sAmount = Math.floor(amount).toString();
+      else if (symbol.endsWith('BNB')) sAmount = (Math.floor(amount * 1000) / 1000).toString();
+
       let count = 0;
       const orderLimit = 25;
-      const { symbol } = newCoin;
       await sleep(800);
-      // this.logService.blog('After sleep...', Date.now(), symbol);
+      this.logService.blog('After sleep...', Date.now(), symbol, this.spotBnbBalance, amount, sAmount);
 
       while (count < orderLimit) {
         this.binance.order({
@@ -96,8 +105,8 @@ export class BinanceService {
           this.logService.blog('Buy new coin', newCoin, order, Date.now());
           this.onBuyNewCoin(newCoin);
         }).catch(e => {
-          // const { message } = e;
-          // console.log('New coin failed', new Date(), count, symbol, message);
+          const { message } = e;
+          console.log('New coin failed', new Date(), count, symbol, message);
         });
         await sleep(20);
         count += 1;
@@ -112,7 +121,8 @@ export class BinanceService {
     await sleep(5 * 1000);
 
     await this.updateLotSizes();
-    const quantity = await this.getBalance(symbol.replace('USDT', ''));
+    const balanceSymbol = symbol.replace('USDT', '').replace('BNB', '');
+    const quantity = await this.getBalance(balanceSymbol);
     const sQuantity = this.calculateQuantity(symbol, quantity, 1);
     const sellOrder = await this.binance.order({
       symbol: symbol,

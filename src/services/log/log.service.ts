@@ -47,6 +47,7 @@ export class LogService {
 
   blog(...msg) {
     const data = this.getMessage(msg);
+    if (this.appEnvironment.isDevelopment()) console.log(data);
     fs.appendFileSync(this.bFilePath, data, { encoding: 'utf8' });
   }
 
