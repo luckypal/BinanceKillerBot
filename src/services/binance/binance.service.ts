@@ -66,7 +66,7 @@ export class BinanceService {
     await this.getLotSizes();
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('30 */1 * * * *')
   async updateBalance() {
     this.spotBalance = await this.getUsdtBalance();
     this.spotBnbBalance = await this.getBalance('BNB');
@@ -90,11 +90,13 @@ export class BinanceService {
       else if (symbol.endsWith('BNB')) sAmount = (Math.floor(amount * 1000) / 1000).toString();
 
       let count = 0;
-      const orderLimit = 25;
-      await sleep(800);
+      const orderLimit = 15;
+      await sleep(960);
       this.logService.blog('After sleep...', Date.now(), symbol, this.spotBnbBalance, amount, sAmount);
+      this.logPrice(symbol, 10);
 
       while (count < orderLimit) {
+        console.log('BUY', count, Date.now());
         this.binance.order({
           symbol,
           side: OrderSide.BUY,
@@ -103,45 +105,58 @@ export class BinanceService {
         }).then(order => {
           count = orderLimit;
           this.logService.blog('Buy new coin', newCoin, order, Date.now());
-          this.onBuyNewCoin(newCoin);
+          this.onBuyNewCoin(newCoin, order);
         }).catch(e => {
           const { message } = e;
           console.log('New coin failed', new Date(), count, symbol, message);
         });
-        await sleep(20);
+        await sleep(10);
         count += 1;
       }
     });
   }
 
-  async onBuyNewCoin(newCoin: NewCoin) {
+  async onBuyNewCoin(newCoin: NewCoin, buyOrder: Order) {
+    const { isSniperUseLimit } = this.appEnvironment;
     const { symbol } = newCoin;
     this.eventEmitter.emit('binance.newCoin.ordered', newCoin);
-    this.logPrice(symbol, 5);
-    await sleep(5 * 1000);
-
     await this.updateLotSizes();
     const balanceSymbol = symbol.replace('USDT', '').replace('BNB', '');
     const quantity = await this.getBalance(balanceSymbol);
     const sQuantity = this.calculateQuantity(symbol, quantity, 1);
-    const sellOrder = await this.binance.order({
-      symbol: symbol,
-      side: OrderSide.SELL,
-      quantity: sQuantity,
-      type: OrderType.MARKET,
-    });
-    this.logService.blog('Sell new coin', newCoin, sQuantity, sellOrder);
+
+    if (isSniperUseLimit) {
+      let sellPrice = parseFloat(buyOrder.price) * 1.2;
+      sellPrice = this.filterPrice(symbol, sellPrice);
+      this.logService.blog('Before to Sell new coin', Date.now(), newCoin, sQuantity);
+
+      const sellOrder = await this.binance.order({
+        symbol: symbol,
+        side: OrderSide.SELL,
+        quantity: sQuantity,
+        type: OrderType.LIMIT,
+        price: sellPrice.toString()
+      });
+      this.logService.blog('Sell new coin', newCoin, sQuantity, sellOrder);
+    } else {
+      await sleep(2 * 1000);
+
+      const sellOrder = await this.binance.order({
+        symbol: symbol,
+        side: OrderSide.SELL,
+        quantity: sQuantity,
+        type: OrderType.MARKET,
+      });
+      this.logService.blog('Sell new coin', newCoin, sQuantity, sellOrder);
+    }
   }
 
-  async logPrice(symbol: string, second: number) {
-    for (let i = 0; i < second * 10; i++) {
-      this.binance.ws.trades([symbol], trade => {
-        const { price } = trade;
-        console.log('New coin Price', new Date(), symbol, price);
-        this.logService.blog('New coin Price', Date.now(), symbol, price);
-      });
-      await sleep(100);
-    }
+  async logPrice(symbol: string, seconds: number) {
+    const handler = this.binance.ws.trades([symbol], trade => {
+      this.logService.blog(trade);
+    });
+    await sleep(seconds * 1000);
+    handler();
   }
 
   setWatchSymbol(symbol) {

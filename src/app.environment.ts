@@ -130,6 +130,11 @@ export class AppEnvironment {
   @IsNumber()
   readonly isRunSniper = 1;
 
+  @Env('IS_SNIPER_USE_LIMIT')
+  @Transform(({ value }) => value ? Number.parseInt(value, 10) : 0)
+  @IsNumber()
+  readonly isSniperUseLimit = 1;
+
   @Env('IS_RUN_BIBOT')
   @Transform(({ value }) => value ? Number.parseInt(value, 10) : 1)
   @IsNumber()
