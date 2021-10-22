@@ -90,8 +90,8 @@ export class BinanceService {
       else if (symbol.endsWith('BNB')) sAmount = (Math.floor(amount * 1000) / 1000).toString();
 
       let count = 0;
-      const orderLimit = 15;
-      await sleep(960);
+      const orderLimit = 10;
+      await sleep(850);
       this.logService.blog('After sleep...', Date.now(), symbol, this.spotBnbBalance, amount, sAmount);
       this.logPrice(symbol, 10);
 
@@ -104,13 +104,13 @@ export class BinanceService {
           type: OrderType.MARKET,
         }).then(order => {
           count = orderLimit;
-          this.logService.blog('Buy new coin', newCoin, order, Date.now());
+          this.logService.blog('Buy new coin', Date.now(), newCoin, order, count);
           this.onBuyNewCoin(newCoin, order);
         }).catch(e => {
           const { message } = e;
           console.log('New coin failed', new Date(), count, symbol, message);
         });
-        await sleep(10);
+        await sleep(50);
         count += 1;
       }
     });
