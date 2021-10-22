@@ -25,9 +25,10 @@ export class BibotService {
   ) { }
 
   @OnEvent('bibot.onSignal')
-  onNewSignal(signals: BISignal[]) {
+  async onNewSignal(signals: BISignal[]) {
     const { indicatorSymbol } = this.appEnvironment;
-    signals.forEach(async signal => {
+    for (let i = 0; i < signals.length; i ++) {
+      const signal = signals[i];
       const { symbol } = signal;
       if (indicatorSymbol.indexOf(symbol) == -1) return;
       try {
@@ -35,7 +36,7 @@ export class BibotService {
       } catch (e) {
         console.log(e);
       }
-    });
+    }
   }
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -59,12 +60,11 @@ export class BibotService {
         order.order.closedAt = Date.now();
         this.logService.bilog(`${bnOrder.side} ORDER ${symbol}#${orderId} is ${bnOrder.status}`);
 
+        this.removeOrder(symbol);
         if (bnOrder.status == OrderStatus.FILLED) {
           if (side == OrderSide.BUY) {
-            this.removeOrder(symbol);
             this.sell(order);
           } else {
-            this.removeOrder(symbol);
             // this.refundToSpot(order);
           }
         }
