@@ -1,3 +1,4 @@
+import { OnEvent } from '@nestjs/event-emitter';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   WebSocketGateway,
@@ -5,7 +6,6 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
 import { AppEnvironment } from 'src/app.environment';
@@ -55,6 +55,17 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
           watchPrice
         } = this.binanceService;
         client.emit('price', { symbol: watchSymbol, price: watchPrice });
+      } catch (e) {
+        console.log(e);
+      }
+    })
+  }
+
+  @OnEvent('binance.newCoin.added')
+  sendNewCoin(data) {
+    this.clients.forEach(client => {
+      try {
+        client.emit('newcoin', data);
       } catch (e) {
         console.log(e);
       }

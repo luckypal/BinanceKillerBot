@@ -44,7 +44,7 @@ export class BinanceService {
     this.updateBalance();
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async updatePrice() {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
@@ -66,7 +66,7 @@ export class BinanceService {
     await this.getLotSizes();
   }
 
-  @Cron('30 */1 * * * *')
+  @Cron(CronExpression.EVERY_MINUTE)
   async updateBalance() {
     this.spotBalance = await this.getUsdtBalance();
     this.spotBnbBalance = await this.getBalance('BNB');

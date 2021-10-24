@@ -30,11 +30,8 @@ export class NewCoinService {
     // this.getNewCoins();
   }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_5_SECONDS)
   getBinanceArticle() {
-    const { isRunSniper } = this.appEnvironment;
-    if (!isRunSniper) return;
-
     axios.get(this.URL_BINANCE_ARTICLE)
       .then(({ data: { data: { articles } } }: { data: { data: { articles: BinanceArticle[] } } }) => {
         this.checkNewCoins(articles);
@@ -60,6 +57,9 @@ export class NewCoinService {
   }
 
   buyNewCoin() {
+    const { isRunSniper } = this.appEnvironment;
+    if (!isRunSniper) return;
+
     const newCoins = this.data.filter(({ isExist }) => !isExist);
     if (!newCoins.length) return;
 
@@ -82,19 +82,32 @@ export class NewCoinService {
       if (!foundTitle) return;
       let symbol = foundTitle[0].replace(/\(|\)/g, '')
       symbol = `${symbol}USDT`;
-      this.addNewCoin(symbol);
+
+      const strWillList = 'Will List';
+      const willListPos = title.lastIndexOf(strWillList, foundTitle.index);
+      if (willListPos == -1) return;
+      const strFrom = title.indexOf(' ', willListPos + strWillList.length);
+      const coinName = title.substring(strFrom + 1, foundTitle.index - 1);
+
+      this.addNewCoin(symbol, coinName, article);
     });
   }
 
-  addNewCoin(newCoin: string) {
+  addNewCoin(newCoin: string, coinName: string, article: BinanceArticle) {
     const isFound = this.data.find(({ symbol }) => (symbol == newCoin));
     if (isFound) return;
 
     const isExist = this.binanceService.prices[newCoin]
-    this.data.push({
+    const newCoinData: NewCoin = {
+      title: coinName,
       symbol: newCoin,
       isExist: !!isExist,
       createdAt: Date.now()
+    };
+    this.data.push(newCoinData);
+    this.eventEmitter.emit('binance.newCoin.added', {
+      newCoin: newCoinData,
+      article
     });
   }
 
@@ -160,8 +173,8 @@ export class NewCoinService {
       return null;
     }
     if (foundData.length >= 2) {
-      for (let i = 0; i < foundData.length; i ++) {
-        const {data: item} = foundData[i];
+      for (let i = 0; i < foundData.length; i++) {
+        const { data: item } = foundData[i];
         if (item.toLowerCase().indexOf(`${title.toLowerCase()} (${symbol.toLowerCase()})`) != -1) {
           foundData = [foundData[i]];
           break;
