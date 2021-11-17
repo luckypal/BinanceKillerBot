@@ -185,6 +185,7 @@ export class TelegramService {
 
       const { tgCornixId, tgVipId } = this.appEnvironment;
       const { peer_id: { channel_id = 0 } = {} } = message;
+      console.log(channel_id, message.message, '\n\n\n');
       if (channel_id != tgCornixId
         && channel_id != tgVipId) return;
 

@@ -190,6 +190,7 @@ export class BaseStrategy {
       if (!curPrice) return;
 
       const signal = this.telegramService.signals[signalId];
+      if (!signal) return;
       const newStopLoss = this.getStopLoss(signal, curPrice, leverage, stopLoss);
       if (newStopLoss != stopLoss) {
         this.logService.log(this.strategyId, `Sell Order #${id}: Stop Loss is changed. ${stopLoss} => ${newStopLoss} [ price: ${curPrice} ]`);

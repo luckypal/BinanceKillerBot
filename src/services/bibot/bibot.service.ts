@@ -15,6 +15,7 @@ import { LogService } from '../log/log.service';
  */
 @Injectable()
 export class BibotService {
+  limitPercent = 1.0099;
   orders: BotOrder[] = [];
   activePairs: TradingPair[] = [];
 
@@ -171,7 +172,7 @@ export class BibotService {
     const { biLeverage } = this.appEnvironment;
 
     const buyPrice = buyBncOrder.price;
-    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * 1.01);
+    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * this.limitPercent);
     const stopLossPrice = this.binanceService.filterPrice(symbol, buyPrice * 0.91);
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
@@ -220,7 +221,7 @@ export class BibotService {
     const { biLeverage } = this.appEnvironment;
 
     const buyPrice = parseFloat(price);
-    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * 1.01);
+    const sellPrice = this.binanceService.filterPrice(symbol, buyPrice * this.limitPercent);
     const stopLossPrice = this.binanceService.filterPrice(symbol, buyPrice * 0.91);
     const amountToSell = await this.binanceService.amountToRepay(symbol);
 
