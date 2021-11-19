@@ -179,13 +179,14 @@ export class TelegramService {
     this.mtproto.updates.on('updates', ({ updates }) => {
       const newChannelMessages = updates.filter((update) => update._ === 'updateNewChannelMessage').map(({ message }) => message) // filter `updateNewChannelMessage` types only and extract the 'message' object
 
-      console.log(updates, '\n\n\n');
+      console.log(updates, '\n\n');
       if (newChannelMessages.length == 0) return;
       const message = newChannelMessages[0];
       if (!message) return;
 
       const { tgCornixId, tgVipId } = this.appEnvironment;
       const { peer_id: { channel_id = 0 } = {} } = message;
+      console.log('peer_id', message.peer_id, '\n\n\n');
       if (channel_id != tgCornixId
         && channel_id != tgVipId) return;
 
