@@ -40,7 +40,7 @@ export class BibotService {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   watchOrders() {
     this.orders.forEach(async (order) => {
       try {

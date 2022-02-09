@@ -40,33 +40,33 @@ export class BinanceService {
       apiSecret: this.appEnvironment.bncSecKey,
     });
     this.updatePrice();
-    this.updateLotSizes();
-    this.updateBalance();
+    // this.updateLotSizes();
+    // this.updateBalance();
   }
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // @Cron(CronExpression.EVERY_30_SECONDS)
   async updatePrice() {
     if (!this.binance) return;
     this.prices = await this.binance.prices();
-    this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
+    // this.eventEmitter.emit('binance.onUpdatePrices', this.prices);
 
-    if (this.appEnvironment.isDevelopment() && this.watchSymbol) {
-      this.watchPrice = this.filterPrice(this.watchSymbol, this.prices[this.watchSymbol]);
-    }
+    // if (this.appEnvironment.isDevelopment() && this.watchSymbol) {
+    //   this.watchPrice = this.filterPrice(this.watchSymbol, this.prices[this.watchSymbol]);
+    // }
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async updateDailyStats() {
     this.dailyStats = (await this.binance.dailyStats()) as DailyStatsResult[];
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  // @Cron(CronExpression.EVERY_HOUR)
   async updateLotSizes() {
     if (!this.binance) return;
     await this.getLotSizes();
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async updateBalance() {
     this.spotBalance = await this.getUsdtBalance();
     this.spotBnbBalance = await this.getBalance('BNB');

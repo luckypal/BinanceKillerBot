@@ -29,15 +29,15 @@ export class AppController {
   }
 
   startController() {
-    this.strategyService.createStrategy();
-    this.storageService.load();
+    // this.strategyService.createStrategy();
+    // this.storageService.load();
     this.binanceService.start();
-    setTimeout(() => {
-      this.telegramService.start();
-    }, 2000);
+    // setTimeout(() => {
+    //   this.telegramService.start();
+    // }, 2000);
 
-    this.newsService.start();
-    this.newCoinService.start();
+    // this.newsService.start();
+    // this.newCoinService.start();
   }
 
   @Get('name')
@@ -111,7 +111,8 @@ export class AppController {
   }
 
   @Get('prices')
-  getPrices() {
+  async getPrices() {
+    await this.binanceService.updatePrice();
     return this.jsonBeautify(this.binanceService.prices);
   }
 

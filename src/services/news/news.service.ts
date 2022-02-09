@@ -21,7 +21,7 @@ export class NewsService {
     this.getBinanceArticle();
   }
 
-  @Cron(CronExpression.EVERY_HOUR)
+  // @Cron(CronExpression.EVERY_HOUR)
   getBinanceArticle() {
     axios.get(this.URL_BINANCE_ARTICLE)
       .then(({ data: { data: { articles } } }: { data: { data: { articles: BinanceArticle[] } } }) => {

@@ -30,7 +30,7 @@ export class NewCoinService {
     // this.getNewCoins();
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  // @Cron(CronExpression.EVERY_5_SECONDS)
   getBinanceArticle() {
     axios.get(this.URL_BINANCE_ARTICLE)
       .then(({ data: { data: { articles } } }: { data: { data: { articles: BinanceArticle[] } } }) => {
@@ -46,12 +46,12 @@ export class NewCoinService {
       });
   }
 
-  @Cron('59 59 * * * *')
+  // @Cron('59 59 * * * *')
   buyNewCoin0() {
     this.buyNewCoin();
   }
 
-  @Cron('59 29 * * * *')
+  // @Cron('59 29 * * * *')
   buyNewCoin30() {
     this.buyNewCoin();
   }

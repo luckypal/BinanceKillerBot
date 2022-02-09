@@ -46,7 +46,7 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.binanceService.setWatchSymbol(symbol);
   }
 
-  @Cron(CronExpression.EVERY_SECOND)
+  // @Cron(CronExpression.EVERY_SECOND)
   sendPrice() {
     this.clients.forEach(client => {
       try {

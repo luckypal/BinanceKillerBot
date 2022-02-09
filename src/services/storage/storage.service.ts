@@ -40,7 +40,7 @@ export class StorageService {
     this.biBotFilePath = `${logFileDir}/bibot_data.json`;
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  // @Cron(CronExpression.EVERY_MINUTE)
   async save() {
     if (!this.isLoaded) return;
 
